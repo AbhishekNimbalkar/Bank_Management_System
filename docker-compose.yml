@@ -1,0 +1,169 @@
+# Bank Management System - full stack.   cp .env.example .env  (fill it in)  then:  docker compose up -d --build
+# Only the API gateway is published to the network; every other service is internal.
+
+x-service-env: &service-env
+  EUREKA_URL: http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+  # One database; each service logs in with its own role that owns only its schema.
+  DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-bankmanagement}
+  JWT_ISSUER: ${JWT_ISSUER}
+  JWT_JWK_SET_URI: http://auth-service:8081/.well-known/jwks.json
+  SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+  # Shared secret the gateway stamps on every request; services reject calls without it.
+  INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set in .env}
+
+x-service: &service
+  restart: unless-stopped
+  networks: [ backend ]
+  depends_on:
+    postgres: { condition: service_healthy }
+    rabbitmq: { condition: service_healthy }
+    discovery-server: { condition: service_healthy }
+  security_opt: [ "no-new-privileges:true" ]
+  read_only: true
+  tmpfs: [ /tmp ]
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_ADMIN_USERNAME}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-bankmanagement}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      ORGANIZATION_DB_PASSWORD: ${ORGANIZATION_DB_PASSWORD}
+      ATTENDANCE_DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD}
+      INCENTIVE_DB_PASSWORD: ${INCENTIVE_DB_PASSWORD}
+      AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/01-init-schemas.sh:/docker-entrypoint-initdb.d/01-init-schemas.sh:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_ADMIN_USERNAME} -d ${DB_NAME:-bankmanagement}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [ backend ]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "127.0.0.1:15672:15672"   # management UI, local machine only
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks: [ backend ]
+
+  discovery-server:
+    build: { context: ., args: { MODULE: discovery-server } }
+    image: bankmanagement/discovery-server:latest
+    restart: unless-stopped
+    environment:
+      PORT: 8761
+      EUREKA_USERNAME: ${EUREKA_USERNAME}
+      EUREKA_PASSWORD: ${EUREKA_PASSWORD}
+      EUREKA_HOSTNAME: discovery-server
+    ports:
+      - "127.0.0.1:8761:8761"
+    security_opt: [ "no-new-privileges:true" ]
+    read_only: true
+    tmpfs: [ /tmp ]
+    networks: [ backend ]
+
+  auth-service:
+    <<: *service
+    build: { context: ., args: { MODULE: auth-service } }
+    image: bankmanagement/auth-service:latest
+    environment:
+      <<: *service-env
+      PORT: 8081
+      DB_USERNAME: auth_svc
+      DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY:-}
+      JWT_ALLOW_EPHEMERAL_KEY: ${JWT_ALLOW_EPHEMERAL_KEY:-false}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+
+  organization-service:
+    <<: *service
+    build: { context: ., args: { MODULE: organization-service } }
+    image: bankmanagement/organization-service:latest
+    environment:
+      <<: *service-env
+      PORT: 8082
+      DB_USERNAME: organization_svc
+      DB_PASSWORD: ${ORGANIZATION_DB_PASSWORD}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?DATA_ENCRYPTION_KEY must be set in .env}
+
+  attendance-service:
+    <<: *service
+    build: { context: ., args: { MODULE: attendance-service } }
+    image: bankmanagement/attendance-service:latest
+    environment:
+      <<: *service-env
+      PORT: 8083
+      DB_USERNAME: attendance_svc
+      DB_PASSWORD: ${ATTENDANCE_DB_PASSWORD}
+      APP_TIMEZONE: Asia/Kolkata
+
+  incentive-service:
+    <<: *service
+    build: { context: ., args: { MODULE: incentive-service } }
+    image: bankmanagement/incentive-service:latest
+    environment:
+      <<: *service-env
+      PORT: 8085
+      DB_USERNAME: incentive_svc
+      DB_PASSWORD: ${INCENTIVE_DB_PASSWORD}
+      APP_TIMEZONE: Asia/Kolkata
+
+  audit-service:
+    <<: *service
+    build: { context: ., args: { MODULE: audit-service } }
+    image: bankmanagement/audit-service:latest
+    environment:
+      <<: *service-env
+      PORT: 8084
+      DB_USERNAME: audit_svc
+      DB_PASSWORD: ${AUDIT_DB_PASSWORD}
+
+  api-gateway:
+    build: { context: ., args: { MODULE: api-gateway } }
+    image: bankmanagement/api-gateway:latest
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      EUREKA_URL: http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@discovery-server:8761/eureka/
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_JWK_SET_URI: http://auth-service:8081/.well-known/jwks.json
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN must be set in .env}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+    ports:
+      - "8080:8080"
+    depends_on:
+      discovery-server: { condition: service_healthy }
+      auth-service: { condition: service_healthy }
+    security_opt: [ "no-new-privileges:true" ]
+    read_only: true
+    tmpfs: [ /tmp ]
+    networks: [ backend ]
+
+networks:
+  backend:
+
+volumes:
+  pgdata:
+  rabbitdata:

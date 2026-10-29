@@ -1,0 +1,86 @@
+server:
+  port: ${PORT:8081}
+  forward-headers-strategy: framework
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+    include-message: never
+
+spring:
+  application:
+    name: auth-service
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bankmanagement}
+    username: ${DB_USERNAME:auth_svc}
+    password: ${DB_PASSWORD:change-me-db}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      schema: auth
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        default_schema: auth
+  flyway:
+    schemas: auth
+    default-schema: auth
+    create-schemas: true
+    enabled: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:bankmanagement}
+    password: ${RABBITMQ_PASSWORD:change-me-rabbit}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://eureka:change-me-eureka@localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+app:
+  security:
+    public-paths: /api/v1/auth/login,/api/v1/auth/refresh,/api/v1/auth/logout,/.well-known/jwks.json
+  auth:
+    jwt:
+      issuer: ${JWT_ISSUER:https://auth.bankmanagement.local}
+      access-token-ttl: ${JWT_ACCESS_TTL:15m}
+      refresh-token-ttl: ${JWT_REFRESH_TTL:8h}
+      impersonation-ttl: ${JWT_IMPERSONATION_TTL:30m}
+      private-key: ${JWT_PRIVATE_KEY:}
+      allow-ephemeral-key: ${JWT_ALLOW_EPHEMERAL_KEY:false}
+    lockout:
+      max-attempts: ${LOCKOUT_MAX_ATTEMPTS:5}
+      base-lock: ${LOCKOUT_BASE:15m}
+      max-lock: ${LOCKOUT_MAX:8h}
+    bootstrap:
+      username: ${BOOTSTRAP_ADMIN_USERNAME:}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+      name: ${BOOTSTRAP_ADMIN_NAME:Platform Owner}
+      email: ${BOOTSTRAP_ADMIN_EMAIL:}
+
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{requestId:-}]"

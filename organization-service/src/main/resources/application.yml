@@ -1,0 +1,84 @@
+server:
+  port: ${PORT:8082}
+  forward-headers-strategy: framework
+  shutdown: graceful
+  error:
+    include-stacktrace: never
+    include-message: never
+
+spring:
+  application:
+    name: organization-service
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bankmanagement}
+    username: ${DB_USERNAME:organization_svc}
+    password: ${DB_PASSWORD:change-me-db}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      schema: organization
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        default_schema: organization
+  flyway:
+    schemas: organization
+    default-schema: organization
+    create-schemas: true
+    enabled: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:bankmanagement}
+    password: ${RABBITMQ_PASSWORD:change-me-rabbit}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8081/.well-known/jwks.json}
+          issuer-uri: ${JWT_ISSUER:https://auth.bankmanagement.local}
+          audiences: bank-management
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 3000
+            read-timeout: 10000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://eureka:change-me-eureka@localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+app:
+  crypto:
+    # 32 random bytes, base64. Generate with: openssl rand -base64 32
+    data-key: ${DATA_ENCRYPTION_KEY}
+
+springdoc:
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{requestId:-}]"

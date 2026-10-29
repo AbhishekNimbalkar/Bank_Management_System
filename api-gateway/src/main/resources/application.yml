@@ -1,0 +1,115 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8081/.well-known/jwks.json}
+          issuer-uri: ${JWT_ISSUER:https://auth.bankmanagement.local}
+          audiences: bank-management
+  cloud:
+    gateway:
+      # TrustedHeadersFilter strips spoofable headers and stamps the internal token on every request.
+      # The JWKS signing-key endpoint is deliberately not routed: only internal services need it.
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/permissions/**,/api/v1/admin/tenants/**
+        # Platform-wide customer oversight lives in incentive-service; must precede the /platform/** route.
+        - id: platform-customers
+          uri: lb://incentive-service
+          order: -1
+          predicates:
+            - Path=/api/v1/platform/customers/**,/api/v1/platform/customers
+        - id: organization-service
+          uri: lb://organization-service
+          predicates:
+            - Path=/api/v1/platform/**,/api/v1/banks/**,/api/v1/branches/**,/api/v1/employees/**,/api/v1/designations/**,/api/v1/roles/**,/api/v1/announcements/**
+        - id: incentive-service
+          uri: lb://incentive-service
+          predicates:
+            - Path=/api/v1/incentive-plans/**,/api/v1/products/**,/api/v1/customers/**,/api/v1/leaderboard/**
+        - id: attendance-service
+          uri: lb://attendance-service
+          predicates:
+            - Path=/api/v1/attendance/**,/api/v1/attendance-rules/**,/api/v1/regularizations/**,/api/v1/leaves/**,/api/v1/leave-policies/**,/api/v1/holidays/**,/api/v1/timesheets/**
+        - id: audit-service
+          uri: lb://audit-service
+          predicates:
+            - Path=/api/v1/audit-logs/**
+        # OpenAPI documents of each service, aggregated in the gateway Swagger UI
+        - id: auth-docs
+          uri: lb://auth-service
+          predicates: [ "Path=/docs/auth/v3/api-docs" ]
+          filters: [ "RewritePath=/docs/auth/(?<path>.*), /$\\{path}" ]
+        - id: organization-docs
+          uri: lb://organization-service
+          predicates: [ "Path=/docs/organization/v3/api-docs" ]
+          filters: [ "RewritePath=/docs/organization/(?<path>.*), /$\\{path}" ]
+        - id: attendance-docs
+          uri: lb://attendance-service
+          predicates: [ "Path=/docs/attendance/v3/api-docs" ]
+          filters: [ "RewritePath=/docs/attendance/(?<path>.*), /$\\{path}" ]
+        - id: incentive-docs
+          uri: lb://incentive-service
+          predicates: [ "Path=/docs/incentive/v3/api-docs" ]
+          filters: [ "RewritePath=/docs/incentive/(?<path>.*), /$\\{path}" ]
+        - id: audit-docs
+          uri: lb://audit-service
+          predicates: [ "Path=/docs/audit/v3/api-docs" ]
+          filters: [ "RewritePath=/docs/audit/(?<path>.*), /$\\{path}" ]
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://eureka:change-me-eureka@localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+# API documentation is a development aid: off unless SWAGGER_ENABLED=true.
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /docs/auth/v3/api-docs
+      - name: organization-service
+        url: /docs/organization/v3/api-docs
+      - name: attendance-service
+        url: /docs/attendance/v3/api-docs
+      - name: incentive-service
+        url: /docs/incentive/v3/api-docs
+      - name: audit-service
+        url: /docs/audit/v3/api-docs
+
+app:
+  docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  rate-limit:
+    auth-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:30}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{requestId:-}]"
