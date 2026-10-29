@@ -4,10 +4,13 @@ server:
 spring:
   application:
     name: discovery-server
+  config:
+    # Local runs (IDE / mvn spring-boot:run) read secrets from the git-ignored .env at the project root.
+    import: "optional:file:.env[.properties],optional:file:../.env[.properties]"
   security:
     user:
-      name: ${EUREKA_USERNAME:eureka}
-      password: ${EUREKA_PASSWORD:change-me-eureka}
+      name: ${EUREKA_USERNAME}
+      password: ${EUREKA_PASSWORD}
 
 eureka:
   instance:

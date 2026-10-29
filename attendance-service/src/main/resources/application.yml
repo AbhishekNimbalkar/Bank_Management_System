@@ -9,12 +9,15 @@ server:
 spring:
   application:
     name: attendance-service
+  config:
+    # Local runs (IDE / mvn spring-boot:run) read secrets from the git-ignored .env at the project root.
+    import: "optional:file:.env[.properties],optional:file:../.env[.properties]"
   lifecycle:
     timeout-per-shutdown-phase: 20s
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/bankmanagement}
-    username: ${DB_USERNAME:attendance_svc}
-    password: ${DB_PASSWORD:change-me-db}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:10}
       schema: attendance
@@ -34,8 +37,8 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:bankmanagement}
-    password: ${RABBITMQ_PASSWORD:change-me-rabbit}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
   security:
     oauth2:
       resourceserver:
@@ -54,7 +57,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL:http://eureka:change-me-eureka@localhost:8761/eureka/}
+      defaultZone: ${EUREKA_URL:http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:8761/eureka/}
   instance:
     prefer-ip-address: true
 
