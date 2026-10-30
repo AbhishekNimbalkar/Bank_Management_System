@@ -87,7 +87,7 @@ public class AnnouncementService {
     public void delete(UUID id) {
         AuthenticatedUser user = SecurityUtils.currentUser();
         Announcement a = editable(user, SecurityUtils.currentTenant(), id);
-        announcements.delete(a);
+        a.markDeleted();
         audit.record("announcements", "Deleted announcement", a.getTitle());
     }
 

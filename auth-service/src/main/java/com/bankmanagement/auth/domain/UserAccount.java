@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
+@SQLRestriction("deleted_at IS NULL")
 @Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "username"}))
 public class UserAccount extends TenantScopedEntity {
 

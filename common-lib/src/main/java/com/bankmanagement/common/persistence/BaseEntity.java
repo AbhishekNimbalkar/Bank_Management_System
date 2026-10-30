@@ -18,7 +18,11 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.Instant;
 import java.util.UUID;
 
-/** UUID key, who/when auditing columns and optimistic locking for every entity. */
+/**
+ * UUID key, who/when auditing columns (create, update, delete) and optimistic locking for every entity.
+ * Rows are never physically removed: {@link #markDeleted()} stamps {@code deleted_at}/{@code deleted_by},
+ * and each entity hides such rows with {@code @SQLRestriction("deleted_at IS NULL")}.
+ */
 @Getter
 @Setter
 @MappedSuperclass
@@ -45,7 +49,23 @@ public abstract class BaseEntity {
     @Column(name = "updated_by", length = 64)
     private String updatedBy;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Column(name = "deleted_by", length = 64)
+    private String deletedBy;
+
     @Version
     @Column(name = "version", nullable = false)
     private long version;
+
+    /** Soft-deletes this row; it is written on flush like any other change. */
+    public void markDeleted() {
+        this.deletedAt = Instant.now();
+        this.deletedBy = AuditActor.current();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
 }

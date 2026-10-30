@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
+@SQLRestriction("deleted_at IS NULL")
 @Table(name = "tenants")
 public class Tenant extends BaseEntity {
 

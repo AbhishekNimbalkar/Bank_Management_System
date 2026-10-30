@@ -90,7 +90,7 @@ creates one login per service (`auth_svc`, `organization_svc`, `attendance_svc`,
 ```bash
 cp .env.example .env
 # fill in: DB/RabbitMQ/Eureka passwords, DATA_ENCRYPTION_KEY (openssl rand -base64 32),
-#          BOOTSTRAP_ADMIN_PASSWORD, and JWT_PRIVATE_KEY for anything beyond local testing
+#          and JWT_PRIVATE_KEY for anything beyond local testing
 docker compose up -d --build
 ```
 
@@ -99,6 +99,8 @@ docker compose up -d --build
 
 ### First steps
 
+0. Insert the platform owner row into `auth.users` yourself (tenant `platform`, role `SSA`,
+   BCrypt password hash). No account is created automatically.
 1. `POST /api/v1/auth/login` with `{"tenantCode":"platform","username":"masteradmin","password":"..."}`.
 2. `POST /api/v1/auth/change-password` (required on first sign-in), use the returned token.
 3. `POST /api/v1/platform/tenants` to provision an organization: creates its bank, headquarters

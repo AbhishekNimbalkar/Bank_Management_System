@@ -101,7 +101,7 @@ public class TimesheetService {
     @Transactional
     public void delete(UUID id) {
         Timesheet t = ownPending(id);
-        timesheets.delete(t);
+        t.markDeleted();
         audit.record("timesheets", "Deleted timesheet", t.getHours() + " h on " + t.getWorkDate());
     }
 

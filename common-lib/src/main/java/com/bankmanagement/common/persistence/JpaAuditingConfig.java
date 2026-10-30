@@ -1,6 +1,5 @@
 package com.bankmanagement.common.persistence;
 
-import com.bankmanagement.common.security.SecurityUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -14,8 +13,6 @@ public class JpaAuditingConfig {
 
     @Bean
     public AuditorAware<String> auditorAware() {
-        return () -> Optional.of(SecurityUtils.findCurrentUser()
-                .map(u -> u.userId().toString())
-                .orElse("system"));
+        return () -> Optional.of(AuditActor.current());
     }
 }

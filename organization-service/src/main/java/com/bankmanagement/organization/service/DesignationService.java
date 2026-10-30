@@ -71,7 +71,7 @@ public class DesignationService {
             throw BusinessException.rule("Cannot delete '" + d.getTitle() + "': assigned to " + inUse
                     + " employee(s). Reassign them first.");
         }
-        designations.delete(d);
+        d.markDeleted();
         audit.record("config", "Deleted designation", d.getTitle());
     }
 

@@ -6,16 +6,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "holidays", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "holiday_date", "name"}))
+@SQLRestriction("deleted_at IS NULL")
+@Table(name = "holidays")
 public class Holiday extends TenantScopedEntity {
 
     @Column(name = "holiday_date", nullable = false)

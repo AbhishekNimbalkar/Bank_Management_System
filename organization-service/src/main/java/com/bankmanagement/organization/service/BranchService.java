@@ -4,10 +4,12 @@ import com.bankmanagement.common.audit.AuditPublisher;
 import com.bankmanagement.common.exception.BusinessException;
 import com.bankmanagement.common.security.AuthenticatedUser;
 import com.bankmanagement.common.security.SecurityUtils;
+import com.bankmanagement.organization.domain.Announcement;
 import com.bankmanagement.organization.domain.Bank;
 import com.bankmanagement.organization.domain.Branch;
 import com.bankmanagement.organization.domain.RecordStatus;
 import com.bankmanagement.organization.dto.BranchDto;
+import com.bankmanagement.organization.repository.AnnouncementRepository;
 import com.bankmanagement.organization.repository.BankRepository;
 import com.bankmanagement.organization.repository.BranchRepository;
 import com.bankmanagement.organization.repository.EmployeeRepository;
@@ -28,6 +30,7 @@ public class BranchService {
     private final BranchRepository branches;
     private final BankRepository banks;
     private final EmployeeRepository employees;
+    private final AnnouncementRepository announcements;
     private final QuotaService quotaService;
     private final AuditPublisher audit;
 
@@ -108,7 +111,9 @@ public class BranchService {
             throw BusinessException.rule("Cannot delete '" + branch.getName() + "': " + staff
                     + " employee(s) are assigned to it. Reassign them first.");
         }
-        branches.delete(branch);
+        branch.markDeleted();
+        // The FK used to cascade-delete this branch's announcements; keep that behaviour.
+        announcements.findByTenantCodeAndBranchId(tenant, id).forEach(Announcement::markDeleted);
         audit.record("branches", "Deleted branch", branch.getName() + " (" + branch.getIfsc() + ")");
     }
 

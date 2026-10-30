@@ -176,7 +176,7 @@ public class CustomerService {
         if (!ownRecord) {
             DataScope.assertCanDecide(user, c.getOwner().getUserId(), c.getOwner().getBranchId(), c.getOwner().getRole());
         }
-        customers.delete(c);
+        c.markDeleted();
         audit.record("customers", "Deleted lead", c.getName() + " - " + c.getProductName());
     }
 

@@ -6,15 +6,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 /** Organization-defined role (e.g. Internal Auditor). Built-in roles are not stored here. */
 @Getter
 @Setter
 @Entity
-@Table(name = "custom_roles", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "code"}))
+@SQLRestriction("deleted_at IS NULL")
+@Table(name = "custom_roles")
 public class CustomRole extends TenantScopedEntity {
 
     @Column(nullable = false, length = 10)

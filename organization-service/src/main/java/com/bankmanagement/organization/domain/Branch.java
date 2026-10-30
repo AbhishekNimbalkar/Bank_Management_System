@@ -7,9 +7,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.UUID;
 
@@ -17,7 +17,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "branches", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "ifsc"}))
+@SQLRestriction("deleted_at IS NULL")
+@Table(name = "branches")
 public class Branch extends TenantScopedEntity {
 
     @Column(name = "bank_id", nullable = false)

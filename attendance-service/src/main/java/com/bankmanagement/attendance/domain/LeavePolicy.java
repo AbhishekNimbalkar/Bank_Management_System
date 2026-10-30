@@ -7,12 +7,14 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 
 @Getter
 @Setter
 @Entity
+@SQLRestriction("deleted_at IS NULL")
 @Table(name = "leave_policies", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "code"}))
 public class LeavePolicy extends TenantScopedEntity {
 

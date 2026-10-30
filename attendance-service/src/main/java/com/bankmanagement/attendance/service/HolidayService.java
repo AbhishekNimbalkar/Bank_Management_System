@@ -78,7 +78,7 @@ public class HolidayService {
     public void delete(UUID id) {
         Holiday h = holidays.findByIdAndTenantCode(id, SecurityUtils.currentTenant())
                 .orElseThrow(() -> BusinessException.notFound("Holiday"));
-        holidays.delete(h);
+        h.markDeleted();
         audit.record("holidays", "Removed holiday", h.getName() + " (" + h.getHolidayDate() + ")");
     }
 }

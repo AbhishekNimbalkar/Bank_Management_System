@@ -6,14 +6,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "designations", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "title"}))
+@SQLRestriction("deleted_at IS NULL")
+@Table(name = "designations")
 public class Designation extends TenantScopedEntity {
 
     @Column(nullable = false, length = 60)

@@ -82,7 +82,7 @@ public class CustomRoleService {
             throw BusinessException.rule("Cannot delete role '" + role.getName() + "': assigned to " + inUse
                     + " employee(s). Reassign them first.");
         }
-        roles.delete(role);
+        role.markDeleted();
         audit.record("config", "Deleted role", role.getName() + " [" + role.getCode() + "]");
     }
 

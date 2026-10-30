@@ -9,7 +9,7 @@ import java.time.Duration;
 
 @Validated
 @ConfigurationProperties(prefix = "app.auth")
-public record AuthProperties(Jwt jwt, Lockout lockout, Bootstrap bootstrap) {
+public record AuthProperties(Jwt jwt, Lockout lockout) {
 
     /**
      * @param privateKey PKCS#8 RSA private key (PEM, or base64 of the PEM). Required in production.
@@ -24,9 +24,5 @@ public record AuthProperties(Jwt jwt, Lockout lockout, Bootstrap bootstrap) {
     }
 
     public record Lockout(@Min(3) int maxAttempts, Duration baseLock, Duration maxLock) {
-    }
-
-    /** First platform-owner account, created once on an empty database. */
-    public record Bootstrap(String username, String password, String name, String email) {
     }
 }

@@ -62,11 +62,6 @@ app:
       max-attempts: ${LOCKOUT_MAX_ATTEMPTS:5}
       base-lock: ${LOCKOUT_BASE:15m}
       max-lock: ${LOCKOUT_MAX:8h}
-    bootstrap:
-      username: ${BOOTSTRAP_ADMIN_USERNAME:}
-      password: ${BOOTSTRAP_ADMIN_PASSWORD:}
-      name: ${BOOTSTRAP_ADMIN_NAME:Platform Owner}
-      email: ${BOOTSTRAP_ADMIN_EMAIL:}
 
 springdoc:
   swagger-ui:

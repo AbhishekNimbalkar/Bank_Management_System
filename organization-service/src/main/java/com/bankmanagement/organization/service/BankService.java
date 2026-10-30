@@ -106,7 +106,7 @@ public class BankService {
             throw BusinessException.rule("Cannot delete bank: it still has " + branchCount
                     + " branch(es). Reassign or delete them first.");
         }
-        banks.delete(bank);
+        bank.markDeleted();
         audit.record("banks", "Deleted bank", bank.getName() + " (" + bank.getCode() + ")");
     }
 
