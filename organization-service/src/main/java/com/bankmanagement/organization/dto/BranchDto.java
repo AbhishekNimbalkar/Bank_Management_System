@@ -26,7 +26,7 @@ public final class BranchDto {
             RecordStatus status) {
     }
 
-    public record Response(UUID id, UUID bankId, String bankName, String name, String ifsc, LocationDto location,
+    public record Response(UUID branchId, UUID bankId, String bankName, String name, String ifsc, LocationDto location,
                            String address, int radiusMeters, boolean headquarters, RecordStatus status,
                            long staffCount) {
 

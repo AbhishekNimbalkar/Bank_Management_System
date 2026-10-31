@@ -8,6 +8,7 @@ import com.bankmanagement.organization.domain.Branch;
 import com.bankmanagement.organization.domain.RecordStatus;
 import com.bankmanagement.organization.dto.BankDto;
 import com.bankmanagement.organization.dto.LocationDto;
+import com.bankmanagement.organization.repository.BankLogoRepository;
 import com.bankmanagement.organization.repository.BankRepository;
 import com.bankmanagement.organization.repository.BranchRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -25,14 +27,16 @@ public class BankService {
 
     private final BankRepository banks;
     private final BranchRepository branches;
+    private final BankLogoRepository logos;
     private final QuotaService quotaService;
     private final AuditPublisher audit;
 
     @Transactional(readOnly = true)
     public List<BankDto.Response> list() {
         String tenant = SecurityUtils.currentTenant();
+        Set<UUID> withLogo = logos.bankIdsWithLogo(tenant);
         return banks.findByTenantCodeOrderByNameAsc(tenant).stream()
-                .map(b -> BankDto.Response.from(b, branches.countByTenantCodeAndBankId(tenant, b.getId())))
+                .map(b -> BankDto.Response.from(b, branches.countByTenantCodeAndBankId(tenant, b.getId()), withLogo.contains(b.getId())))
                 .toList();
     }
 
@@ -40,7 +44,8 @@ public class BankService {
     public BankDto.Response get(UUID id) {
         String tenant = SecurityUtils.currentTenant();
         Bank bank = find(tenant, id);
-        return BankDto.Response.from(bank, branches.countByTenantCodeAndBankId(tenant, id));
+        return BankDto.Response.from(bank, branches.countByTenantCodeAndBankId(tenant, id),
+                logos.existsByBankIdAndTenantCode(id, tenant));
     }
 
     /** Creates the bank and its headquarters branch at the registered address. */
@@ -49,7 +54,7 @@ public class BankService {
         String tenant = SecurityUtils.currentTenant();
         Bank bank = createWithHeadquarters(tenant, req.name(), req.code(), req.location());
         audit.record("banks", "Created bank", bank.getName() + " (" + bank.getCode() + ") with headquarters branch");
-        return BankDto.Response.from(bank, 1);
+        return BankDto.Response.from(bank, 1, false);
     }
 
     /** Also used when a new organization is provisioned. */
@@ -94,7 +99,8 @@ public class BankService {
             bank.setStatus(req.status());
         }
         audit.record("banks", "Updated bank", bank.getName() + " (" + bank.getCode() + ")");
-        return BankDto.Response.from(bank, branches.countByTenantCodeAndBankId(tenant, id));
+        return BankDto.Response.from(bank, branches.countByTenantCodeAndBankId(tenant, id),
+                logos.existsByBankIdAndTenantCode(id, tenant));
     }
 
     @Transactional

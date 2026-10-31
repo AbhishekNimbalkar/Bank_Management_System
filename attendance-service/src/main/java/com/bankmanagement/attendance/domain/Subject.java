@@ -44,6 +44,17 @@ public class Subject {
         return s;
     }
 
+    /** For records created by a manager on someone else's behalf (manual attendance). */
+    public static Subject of(UUID userId, String name, String code, String role, UUID branchId) {
+        Subject s = new Subject();
+        s.setUserId(userId);
+        s.setEmployeeName(name);
+        s.setEmployeeCode(code);
+        s.setEmployeeRole(role);
+        s.setBranchId(branchId);
+        return s;
+    }
+
     /** Embeddables must not be shared between entities; copy when reusing. */
     public Subject copy() {
         Subject s = new Subject();

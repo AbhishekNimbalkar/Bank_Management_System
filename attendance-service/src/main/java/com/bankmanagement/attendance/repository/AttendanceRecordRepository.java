@@ -12,4 +12,6 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
         JpaSpecificationExecutor<AttendanceRecord> {
 
     Optional<AttendanceRecord> findByTenantCodeAndSubjectUserIdAndWorkDate(String tenantCode, UUID userId, LocalDate date);
+
+    Optional<AttendanceRecord> findByIdAndTenantCode(UUID id, String tenantCode);
 }

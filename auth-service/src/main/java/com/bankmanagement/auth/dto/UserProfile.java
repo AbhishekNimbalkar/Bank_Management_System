@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public record UserProfile(
-        UUID id,
+        UUID userId,
         String username,
         String name,
         String email,

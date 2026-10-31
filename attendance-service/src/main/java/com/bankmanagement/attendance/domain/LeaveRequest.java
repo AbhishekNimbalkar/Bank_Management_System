@@ -1,6 +1,7 @@
 package com.bankmanagement.attendance.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "leave_requests")
+@AttributeOverride(name = "id", column = @Column(name = "leave_request_id"))
 public class LeaveRequest extends TenantScopedEntity {
 
     @Embedded

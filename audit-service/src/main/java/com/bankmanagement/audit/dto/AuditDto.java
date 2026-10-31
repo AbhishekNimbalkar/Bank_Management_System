@@ -13,7 +13,7 @@ public final class AuditDto {
     public record Filter(String module, String search, Instant from, Instant to) {
     }
 
-    public record Entry(UUID id, long sequence, Instant occurredAt, String actorId, String actorName, String actorRole,
+    public record Entry(UUID auditLogId, long sequence, Instant occurredAt, String actorId, String actorName, String actorRole,
                         String impersonatorId, String module, String action, String detail, String ipAddress,
                         String requestId, String sourceService, String hash) {
 

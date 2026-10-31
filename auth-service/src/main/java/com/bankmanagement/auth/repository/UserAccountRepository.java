@@ -8,11 +8,11 @@ import java.util.UUID;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, UUID> {
 
-    Optional<UserAccount> findByTenantCodeAndUsername(String tenantCode, String username);
+    Optional<UserAccount> findByUsername(String username);
 
     Optional<UserAccount> findByIdAndTenantCode(UUID id, String tenantCode);
 
-    boolean existsByTenantCodeAndUsername(String tenantCode, String username);
+    boolean existsByUsername(String username);
 
     boolean existsByRole(String role);
 }

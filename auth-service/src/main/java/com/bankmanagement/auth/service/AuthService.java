@@ -38,7 +38,7 @@ import java.util.UUID;
 public class AuthService {
 
     private static final int PASSWORD_HISTORY = 3;
-    private static final String INVALID_CREDENTIALS = "Invalid credentials. Please check your organization, username and password.";
+    private static final String INVALID_CREDENTIALS = "Invalid credentials. Please check your username and password.";
 
     private final UserAccountRepository users;
     private final RefreshTokenRepository refreshTokens;
@@ -62,13 +62,11 @@ public class AuthService {
     /** Failure counters must survive the exception, hence no rollback for business errors. */
     @Transactional(noRollbackFor = BusinessException.class)
     public TokenResponse login(LoginRequest req, String ip, String userAgent) {
-        String tenant = req.tenantCode().trim().toLowerCase(Locale.ROOT);
         String username = req.username().trim().toLowerCase(Locale.ROOT);
         Instant now = Instant.now();
 
-        UserAccount user = SecurityUtils.isValidTenantCode(tenant)
-                ? users.findByTenantCodeAndUsername(tenant, username).orElse(null)
-                : null;
+        UserAccount user = users.findByUsername(username).orElse(null);
+        String tenant = user != null ? user.getTenantCode() : Role.PLATFORM_TENANT;
 
         if (user != null && user.isTemporarilyLocked(now)) {
             long minutes = Math.max(1, Duration.between(now, user.getLockedUntil()).toMinutes());

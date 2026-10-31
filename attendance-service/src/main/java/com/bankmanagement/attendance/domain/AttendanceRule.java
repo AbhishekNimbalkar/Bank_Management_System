@@ -1,6 +1,7 @@
 package com.bankmanagement.attendance.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -18,6 +19,7 @@ import java.time.LocalTime;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "attendance_rules", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code"}))
+@AttributeOverride(name = "id", column = @Column(name = "attendance_rule_id"))
 public class AttendanceRule extends TenantScopedEntity {
 
     @Column(name = "shift_start", nullable = false)

@@ -23,7 +23,7 @@ public final class AnnouncementDto {
             @FutureOrPresent LocalDate expiresOn) {
     }
 
-    public record Response(UUID id, String title, String body, boolean pinned, UUID branchId, String authorName,
+    public record Response(UUID announcementId, String title, String body, boolean pinned, UUID branchId, String authorName,
                            LocalDate publishedOn, LocalDate expiresOn) {
 
         public static Response from(Announcement a) {

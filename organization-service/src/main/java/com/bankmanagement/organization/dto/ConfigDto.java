@@ -23,7 +23,7 @@ public final class ConfigDto {
             RecordStatus status) {
     }
 
-    public record DesignationResponse(UUID id, String title, String department, String grade, String description,
+    public record DesignationResponse(UUID designationId, String title, String department, String grade, String description,
                                       RecordStatus status, long staffCount) {
 
         public static DesignationResponse from(Designation d, long staffCount) {
@@ -41,7 +41,7 @@ public final class ConfigDto {
     }
 
     /** Built-in roles are listed with {@code system = true} and cannot be changed or deleted. */
-    public record RoleResponse(UUID id, String code, String name, String category, String description,
+    public record RoleResponse(UUID roleId, String code, String name, String category, String description,
                                boolean system, RecordStatus status, long staffCount) {
 
         public static RoleResponse from(CustomRole r, long staffCount) {

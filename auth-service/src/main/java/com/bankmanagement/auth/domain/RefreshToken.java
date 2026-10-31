@@ -24,6 +24,8 @@ public class RefreshToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "refresh_token_id")
+
     private UUID id;
 
     @Column(name = "user_id", nullable = false)

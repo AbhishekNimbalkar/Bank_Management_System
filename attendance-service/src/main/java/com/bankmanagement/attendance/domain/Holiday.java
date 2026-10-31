@@ -1,6 +1,7 @@
 package com.bankmanagement.attendance.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,6 +18,7 @@ import java.time.LocalDate;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "holidays")
+@AttributeOverride(name = "id", column = @Column(name = "holiday_id"))
 public class Holiday extends TenantScopedEntity {
 
     @Column(name = "holiday_date", nullable = false)

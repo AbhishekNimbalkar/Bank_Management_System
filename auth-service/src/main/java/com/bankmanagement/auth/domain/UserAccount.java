@@ -1,12 +1,12 @@
 package com.bankmanagement.auth.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
@@ -19,7 +19,9 @@ import java.util.UUID;
 @Setter
 @Entity
 @SQLRestriction("deleted_at IS NULL")
-@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "username"}))
+// Username is unique platform-wide among non-deleted rows (partial index ux_users_username, V3 migration).
+@Table(name = "users")
+@AttributeOverride(name = "id", column = @Column(name = "user_id"))
 public class UserAccount extends TenantScopedEntity {
 
     @Column(nullable = false, length = 32)

@@ -49,7 +49,7 @@ public class UserAdminService {
         }
 
         String username = req.username().toLowerCase(Locale.ROOT);
-        if (users.existsByTenantCodeAndUsername(tenant, username)) {
+        if (users.existsByUsername(username)) {
             throw BusinessException.conflict("Username '" + username + "' is already taken.", "username");
         }
 

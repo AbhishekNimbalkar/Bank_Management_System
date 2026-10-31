@@ -2,6 +2,7 @@ package com.bankmanagement.organization.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
 import com.bankmanagement.organization.crypto.EncryptedStringConverter;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -24,6 +25,7 @@ import java.util.UUID;
 @Table(name = "employees", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"tenant_code", "code"}),
         @UniqueConstraint(columnNames = {"tenant_code", "username"})})
+@AttributeOverride(name = "id", column = @Column(name = "employee_id"))
 public class Employee extends TenantScopedEntity {
 
     @Column(name = "user_id")
@@ -53,10 +55,11 @@ public class Employee extends TenantScopedEntity {
     @Column(nullable = false, length = 60)
     private String designation;
 
-    @Column(name = "bank_id", nullable = false)
+    // Null only for the Super Admin created at registration, before the client has added any branch.
+    @Column(name = "bank_id")
     private UUID bankId;
 
-    @Column(name = "branch_id", nullable = false)
+    @Column(name = "branch_id")
     private UUID branchId;
 
     @Column(length = 240)

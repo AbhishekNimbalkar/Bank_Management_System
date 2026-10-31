@@ -29,7 +29,7 @@ public final class LeaveDto {
             @NotBlank @Size(min = 3, max = 300) @Pattern(regexp = "^[^<>]*$") String reason) {
     }
 
-    public record Response(UUID id, UUID userId, String employeeName, String employeeCode, UUID policyId,
+    public record Response(UUID leaveRequestId, UUID userId, String employeeName, String employeeCode, UUID policyId,
                            String policyName, String policyCode, Enums.DayType dayType, LocalDate fromDate,
                            LocalDate toDate, BigDecimal days, String reason, Enums.RequestStatus status,
                            UUID decidedBy, Instant decidedAt, String decisionNote) {
@@ -56,7 +56,7 @@ public final class LeaveDto {
             boolean active) {
     }
 
-    public record PolicyResponse(UUID id, String name, String code, BigDecimal annualDays, boolean carryForward,
+    public record PolicyResponse(UUID leavePolicyId, String name, String code, BigDecimal annualDays, boolean carryForward,
                                  boolean paid, boolean halfDayAllowed, boolean active) {
 
         public static PolicyResponse from(LeavePolicy p) {
@@ -71,7 +71,7 @@ public final class LeaveDto {
             @NotNull Enums.HolidayType type) {
     }
 
-    public record HolidayResponse(UUID id, LocalDate date, String name, Enums.HolidayType type, String dayOfWeek) {
+    public record HolidayResponse(UUID holidayId, LocalDate date, String name, Enums.HolidayType type, String dayOfWeek) {
 
         public static HolidayResponse from(Holiday h) {
             return new HolidayResponse(h.getId(), h.getHolidayDate(), h.getName(), h.getType(),

@@ -12,14 +12,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.YearMonth;
@@ -82,6 +85,21 @@ public class AttendanceController {
     @PostMapping("/api/v1/attendance/check-out")
     public ApiResponse<AttendanceDto.Response> checkOut() {
         return ApiResponse.ok("Clocked out.", attendanceService.checkOut());
+    }
+
+    @Operation(summary = "Mark attendance for an employee with the location they worked at (HR, Branch Manager, Super Admin)")
+    @PreAuthorize("hasAuthority('attendance:U')")
+    @PostMapping("/api/v1/attendance/manual")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<AttendanceDto.Response> markManual(@Valid @RequestBody AttendanceDto.ManualRequest request) {
+        return ApiResponse.ok("Attendance marked.", attendanceService.markManual(request));
+    }
+
+    @Operation(summary = "Edit an attendance record (HR and Super Admin only; reason required)")
+    @PreAuthorize("hasAuthority('attendance:U')")
+    @PutMapping("/api/v1/attendance/{id}")
+    public ApiResponse<AttendanceDto.Response> edit(@PathVariable UUID id, @Valid @RequestBody AttendanceDto.EditRequest request) {
+        return ApiResponse.ok("Attendance updated.", attendanceService.edit(id, request));
     }
 
     @Operation(summary = "Shift rules (start, grace, half-day threshold, GPS accuracy)")

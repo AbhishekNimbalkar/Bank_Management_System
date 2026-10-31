@@ -1,6 +1,7 @@
 package com.bankmanagement.incentive.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -25,6 +26,7 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "customers")
+@AttributeOverride(name = "id", column = @Column(name = "customer_id"))
 public class Customer extends TenantScopedEntity {
 
     @Column(nullable = false, length = 80)

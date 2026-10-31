@@ -2,12 +2,15 @@ package com.bankmanagement.organization.web;
 
 import com.bankmanagement.common.api.ApiResponse;
 import com.bankmanagement.organization.dto.BankDto;
+import com.bankmanagement.organization.service.BankLogoService;
 import com.bankmanagement.organization.service.BankService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +19,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +34,7 @@ import java.util.UUID;
 public class BankController {
 
     private final BankService bankService;
+    private final BankLogoService logoService;
 
     @Operation(summary = "List banks")
     @PreAuthorize("hasAuthority('banks:R')")
@@ -65,5 +71,31 @@ public class BankController {
     public ApiResponse<Void> delete(@PathVariable UUID id) {
         bankService.delete(id);
         return ApiResponse.message("Bank deleted.");
+    }
+
+    @Operation(summary = "Get the bank's logo image")
+    @PreAuthorize("hasAuthority('banks:R')")
+    @GetMapping("/{id}/logo")
+    public ResponseEntity<byte[]> getLogo(@PathVariable UUID id) {
+        BankLogoService.Image img = logoService.get(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(img.contentType()))
+                .body(img.data());
+    }
+
+    @Operation(summary = "Upload or replace the bank's logo (PNG, JPEG, WEBP up to 512 KB)")
+    @PreAuthorize("hasAuthority('banks:U')")
+    @PutMapping(value = "/{id}/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<BankDto.Response> uploadLogo(@PathVariable UUID id,
+                                                    @RequestParam("file") MultipartFile file) {
+        return ApiResponse.ok("Logo updated.", logoService.upload(id, file));
+    }
+
+    @Operation(summary = "Remove the bank's logo")
+    @PreAuthorize("hasAuthority('banks:U')")
+    @DeleteMapping("/{id}/logo")
+    public ApiResponse<Void> deleteLogo(@PathVariable UUID id) {
+        logoService.delete(id);
+        return ApiResponse.message("Logo removed.");
     }
 }

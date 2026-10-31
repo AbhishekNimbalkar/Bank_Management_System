@@ -49,7 +49,7 @@ public class TenantController {
         return ApiResponse.ok(tenantService.get(code));
     }
 
-    @Operation(summary = "Provision an organization with its bank, headquarters and Super Admin login")
+    @Operation(summary = "Register a client organization and its Super Admin login (the client adds its own banks and branches)")
     @PreAuthorize("hasRole('SSA')")
     @PostMapping("/tenants")
     public ResponseEntity<ApiResponse<TenantDto.Provisioned>> create(@Valid @RequestBody TenantDto.CreateRequest request) {

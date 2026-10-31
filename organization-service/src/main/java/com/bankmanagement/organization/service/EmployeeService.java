@@ -121,7 +121,7 @@ public class EmployeeService {
         quotaService.assertCanAddEmployee(tenant);
 
         String username = req.username() != null ? req.username() : usernameFromEmail(req.email());
-        if (employees.existsByTenantCodeAndUsername(tenant, username)) {
+        if (employees.existsByUsername(username)) {
             throw BusinessException.conflict("Username '" + username + "' is already taken.", "username");
         }
 
@@ -192,7 +192,8 @@ public class EmployeeService {
         if (!req.role().equals(e.getRole())) {
             assertAssignableRole(actor, tenant, req.role());
         }
-        String before = e.getRole() + " / " + e.getDesignation() + " @ " + branchService.find(tenant, e.getBranchId()).getName();
+        String before = e.getRole() + " / " + e.getDesignation() + " @ "
+                + (e.getBranchId() == null ? "no branch" : branchService.find(tenant, e.getBranchId()).getName());
 
         e.setBranchId(branch.getId());
         e.setBankId(branch.getBankId());
@@ -309,9 +310,11 @@ public class EmployeeService {
     }
 
     private EmployeeDto.Response toResponse(Employee e, String tenant, boolean reveal) {
-        Branch branch = branchService.find(tenant, e.getBranchId());
-        String bankName = banks.findByIdAndTenantCode(e.getBankId(), tenant).map(Bank::getName).orElse(null);
-        return EmployeeDto.Response.from(e, bankName, branch.getName(), branch.isHeadquarters(), reveal);
+        Branch branch = e.getBranchId() == null ? null : branchService.find(tenant, e.getBranchId());
+        String bankName = e.getBankId() == null ? null
+                : banks.findByIdAndTenantCode(e.getBankId(), tenant).map(Bank::getName).orElse(null);
+        return EmployeeDto.Response.from(e, bankName, branch == null ? null : branch.getName(),
+                branch != null && branch.isHeadquarters(), reveal);
     }
 
     private static EmployeeDto.Response toResponse(Employee e, Branch branch, Map<UUID, String> bankNames, boolean reveal) {

@@ -25,6 +25,8 @@ import java.util.UUID;
 public class AuditLog {
 
     @Id
+    @Column(name = "audit_log_id")
+
     private UUID id;
 
     @Column(name = "tenant_code", nullable = false, length = 40)

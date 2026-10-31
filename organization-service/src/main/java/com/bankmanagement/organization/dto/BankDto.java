@@ -22,12 +22,16 @@ public final class BankDto {
             RecordStatus status) {
     }
 
-    public record Response(UUID id, String name, String code, LocationDto location, String address,
-                           RecordStatus status, long branchCount) {
+    public record Response(UUID bankId, String name, String code, LocationDto location, String address,
+                           RecordStatus status, long branchCount, boolean hasLogo) {
 
         public static Response from(Bank b, long branchCount) {
+            return from(b, branchCount, false);
+        }
+
+        public static Response from(Bank b, long branchCount, boolean hasLogo) {
             return new Response(b.getId(), b.getName(), b.getCode(), LocationDto.from(b.getLocation()),
-                    b.getLocation().getAddress(), b.getStatus(), branchCount);
+                    b.getLocation().getAddress(), b.getStatus(), branchCount, hasLogo);
         }
     }
 }

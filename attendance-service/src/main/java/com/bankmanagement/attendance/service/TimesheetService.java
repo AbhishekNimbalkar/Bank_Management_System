@@ -3,14 +3,17 @@ package com.bankmanagement.attendance.service;
 import com.bankmanagement.attendance.domain.Enums.TimesheetStatus;
 import com.bankmanagement.attendance.domain.Subject;
 import com.bankmanagement.attendance.domain.Timesheet;
+import com.bankmanagement.attendance.domain.TimesheetComment;
 import com.bankmanagement.attendance.dto.DecisionRequest;
 import com.bankmanagement.attendance.dto.TimesheetDto;
 import com.bankmanagement.attendance.repository.ScopeSpecs;
+import com.bankmanagement.attendance.repository.TimesheetCommentRepository;
 import com.bankmanagement.attendance.repository.TimesheetRepository;
 import com.bankmanagement.common.audit.AuditPublisher;
 import com.bankmanagement.common.exception.BusinessException;
 import com.bankmanagement.common.security.AuthenticatedUser;
 import com.bankmanagement.common.security.DataScope;
+import com.bankmanagement.common.security.Role;
 import com.bankmanagement.common.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -21,7 +24,9 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -32,15 +37,86 @@ public class TimesheetService {
     private static final BigDecimal MAX_HOURS_PER_DAY = BigDecimal.valueOf(24);
 
     private final TimesheetRepository timesheets;
+    private final TimesheetCommentRepository comments;
     private final AuditPublisher audit;
     private final Clock clock;
 
     @Transactional(readOnly = true)
     public List<TimesheetDto.Response> list() {
         AuthenticatedUser user = SecurityUtils.currentUser();
-        return timesheets.findAll(ScopeSpecs.inScope(SecurityUtils.currentTenant(), DataScope.of(user)),
-                        Sort.by(Sort.Direction.DESC, "workDate"))
-                .stream().map(TimesheetDto.Response::from).toList();
+        String tenant = SecurityUtils.currentTenant();
+        List<Timesheet> rows = timesheets.findAll(ScopeSpecs.inScope(tenant, DataScope.of(user)),
+                Sort.by(Sort.Direction.DESC, "workDate"));
+        Map<UUID, Long> counts = new HashMap<>();
+        if (!rows.isEmpty()) {
+            comments.countByTimesheet(tenant, rows.stream().map(Timesheet::getId).toList())
+                    .forEach(r -> counts.put((UUID) r[0], (Long) r[1]));
+        }
+        return rows.stream().map(t -> TimesheetDto.Response.from(t, counts.getOrDefault(t.getId(), 0L))).toList();
+    }
+
+    /** Comments on an entry the caller can see: the employee, their managers in scope and the Super Admin. */
+    @Transactional(readOnly = true)
+    public List<TimesheetDto.CommentResponse> comments(UUID timesheetId) {
+        String tenant = SecurityUtils.currentTenant();
+        visible(timesheetId);
+        return comments.findByTenantCodeAndTimesheetIdOrderByCreatedAtAsc(tenant, timesheetId).stream()
+                .map(TimesheetDto.CommentResponse::from).toList();
+    }
+
+    /** Only a manager above the employee (in scope) can comment; the employee reads the comments. */
+    @Transactional
+    public TimesheetDto.CommentResponse addComment(UUID timesheetId, TimesheetDto.CommentRequest req) {
+        AuthenticatedUser author = SecurityUtils.currentUser();
+        Timesheet t = visible(timesheetId);
+        Subject s = t.getSubject();
+        if (author.userId().equals(s.getUserId())) {
+            throw BusinessException.forbidden("You cannot comment on your own timesheet.");
+        }
+        boolean topAdmin = author.isPlatformOwner() || Role.SA.name().equals(author.role());
+        if (!topAdmin && Role.rankOf(s.getEmployeeRole()) >= author.rank()) {
+            throw BusinessException.forbidden("Only a manager senior to the employee can comment.");
+        }
+        TimesheetComment c = new TimesheetComment();
+        c.setTenantCode(SecurityUtils.currentTenant());
+        c.setTimesheetId(t.getId());
+        c.setAuthorUserId(author.userId());
+        c.setAuthorName(author.name());
+        c.setAuthorRole(author.role());
+        c.setBody(req.comment().trim());
+        comments.save(c);
+        audit.record("timesheets", "Commented on timesheet", s.getEmployeeName() + " - " + t.getWorkDate());
+        return TimesheetDto.CommentResponse.from(c);
+    }
+
+    /** Authors remove their own comments. */
+    @Transactional
+    public void deleteComment(UUID timesheetId, UUID commentId) {
+        AuthenticatedUser user = SecurityUtils.currentUser();
+        visible(timesheetId);
+        TimesheetComment c = comments.findByIdAndTenantCodeAndTimesheetId(commentId, SecurityUtils.currentTenant(),
+                        timesheetId)
+                .orElseThrow(() -> BusinessException.notFound("Comment"));
+        if (!c.getAuthorUserId().equals(user.userId())) {
+            throw BusinessException.forbidden("You can only delete your own comments.");
+        }
+        c.markDeleted();
+        audit.record("timesheets", "Deleted timesheet comment", "On entry of " + timesheetId);
+    }
+
+    private Timesheet visible(UUID timesheetId) {
+        AuthenticatedUser user = SecurityUtils.currentUser();
+        Timesheet t = timesheets.findByIdAndTenantCode(timesheetId, SecurityUtils.currentTenant())
+                .orElseThrow(() -> BusinessException.notFound("Timesheet entry"));
+        if (!DataScope.of(user).includes(t.getSubject().getBranchId(), t.getSubject().getUserId())) {
+            throw BusinessException.notFound("Timesheet entry");
+        }
+        return t;
+    }
+
+    private TimesheetDto.Response response(Timesheet t) {
+        return TimesheetDto.Response.from(t, t.getId() == null ? 0
+                : comments.countByTenantCodeAndTimesheetId(t.getTenantCode(), t.getId()));
     }
 
     @Transactional
@@ -70,7 +146,7 @@ public class TimesheetService {
         t.setStatus(TimesheetStatus.SUBMITTED);
         timesheets.save(t);
         audit.record("timesheets", "Logged timesheet", req.hours() + " h on " + req.workDate());
-        return TimesheetDto.Response.from(t);
+        return response(t);
     }
 
     /** Own entry, only while it awaits approval; the 24-hour daily cap is re-checked. */
@@ -95,7 +171,7 @@ public class TimesheetService {
         t.setHours(req.hours());
         t.setNotes(req.notes());
         audit.record("timesheets", "Edited timesheet", req.hours() + " h on " + req.workDate());
-        return TimesheetDto.Response.from(t);
+        return response(t);
     }
 
     @Transactional
@@ -131,6 +207,6 @@ public class TimesheetService {
         t.setDecidedAt(Instant.now(clock));
         audit.record("timesheets", decision.approved() ? "Approved timesheet" : "Rejected timesheet",
                 s.getEmployeeName() + " - " + t.getWorkDate());
-        return TimesheetDto.Response.from(t);
+        return response(t);
     }
 }

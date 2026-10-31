@@ -12,12 +12,12 @@ public final class PlatformDto {
                         long branches, long activeEmployees) {
     }
 
-    public record BankAllocation(UUID id, String tenantCode, String organizationName, String name, String code,
+    public record BankAllocation(UUID bankId, String tenantCode, String organizationName, String name, String code,
                                  String city, String state, String status, long branchCount, int maxBranchesAllowed,
                                  long activeStaff) {
     }
 
-    public record BranchAllocation(UUID id, String tenantCode, String organizationName, UUID bankId, String bankName,
+    public record BranchAllocation(UUID branchId, String tenantCode, String organizationName, UUID bankId, String bankName,
                                    String name, String ifsc, String city, double latitude, double longitude,
                                    int radiusMeters, boolean headquarters, String status, long activeStaff) {
     }

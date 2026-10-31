@@ -6,13 +6,10 @@ import com.bankmanagement.common.security.AuthenticatedUser;
 import com.bankmanagement.common.security.Role;
 import com.bankmanagement.common.security.SecurityUtils;
 import com.bankmanagement.organization.client.AuthClient;
-import com.bankmanagement.organization.domain.Bank;
-import com.bankmanagement.organization.domain.Branch;
 import com.bankmanagement.organization.domain.Employee;
 import com.bankmanagement.organization.domain.RecordStatus;
 import com.bankmanagement.organization.domain.Tenant;
 import com.bankmanagement.organization.dto.TenantDto;
-import com.bankmanagement.organization.repository.BranchRepository;
 import com.bankmanagement.organization.repository.EmployeeRepository;
 import com.bankmanagement.organization.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,9 +32,7 @@ public class TenantService {
             Role.PLATFORM_TENANT, "admin", "api", "master", "www", "root", "system", "null", "undefined");
 
     private final TenantRepository tenants;
-    private final BranchRepository branches;
     private final EmployeeRepository employees;
-    private final BankService bankService;
     private final QuotaService quotaService;
     private final AuthClient authClient;
     private final AuditPublisher audit;
@@ -58,8 +53,9 @@ public class TenantService {
     }
 
     /**
-     * Creates the organization, its first bank + headquarters branch and the Super Admin employee, then
-     * the admin login in auth-service. Any failure rolls back the local transaction.
+     * Registers the client company and its Super Admin employee, then the admin login in auth-service.
+     * No bank or branch is created: the client adds its own afterwards, so the admin starts without a
+     * branch (organization-wide scope). Any failure rolls back the local transaction.
      */
     @Transactional
     public TenantDto.Provisioned create(TenantDto.CreateRequest req) {
@@ -70,6 +66,9 @@ public class TenantService {
         }
         if (tenants.existsByCode(code)) {
             throw BusinessException.conflict("Organization code '" + code + "' is already registered.", "code");
+        }
+        if (employees.existsByUsername(req.admin().username())) {
+            throw BusinessException.conflict("Username '" + req.admin().username() + "' is already taken.", "admin.username");
         }
 
         Tenant tenant = new Tenant();
@@ -86,9 +85,6 @@ public class TenantService {
         tenant.setAdminPhone(req.admin().phone());
         tenants.saveAndFlush(tenant);
 
-        Bank bank = bankService.createWithHeadquarters(code, req.organizationName(), null, req.headquarters());
-        Branch hq = branches.findByTenantCodeAndBankIdOrderByNameAsc(code, bank.getId()).get(0);
-
         Employee admin = new Employee();
         admin.setTenantCode(code);
         admin.setCodeNumber(101);
@@ -99,9 +95,7 @@ public class TenantService {
         admin.setPhone(tenant.getAdminPhone());
         admin.setRole(Role.SA.name());
         admin.setDesignation("Super Administrator");
-        admin.setBankId(bank.getId());
-        admin.setBranchId(hq.getId());
-        admin.setAddress(hq.getLocation().getAddress());
+        admin.setAddress(req.headquarters().formatted());
         admin.setJoinedOn(LocalDate.now(ZoneId.of("Asia/Kolkata")));
         admin.setStatus(RecordStatus.ACTIVE);
         employees.saveAndFlush(admin);
@@ -109,11 +103,11 @@ public class TenantService {
         authClient.setTenantStatus(code, new AuthClient.StatusCommand("ACTIVE"));
         AuthClient.CreatedUser user = authClient.createUser(new AuthClient.CreateUserCommand(code,
                 admin.getUsername(), admin.getName(), admin.getEmail(), Role.SA.name(), admin.getId(), admin.getCode(),
-                hq.getId(), req.admin().initialPassword())).data();
+                null, req.admin().initialPassword())).data();
         admin.setUserId(user.userId());
         tenant.setAdminUserId(user.userId());
 
-        audit.record("superadmins", "Provisioned organization", tenant.getOrganizationName() + " (" + code + "), "
+        audit.record("superadmins", "Registered organization", tenant.getOrganizationName() + " (" + code + "), up to "
                 + tenant.getMaxBanks() + " banks / " + tenant.getMaxBranches() + " branches");
         return new TenantDto.Provisioned(TenantDto.Response.from(tenant, quotaService.usage(code)),
                 user.username(), user.temporaryPassword());

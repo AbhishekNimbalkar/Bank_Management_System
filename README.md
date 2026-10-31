@@ -79,7 +79,8 @@ creates one login per service (`auth_svc`, `organization_svc`, `attendance_svc`,
 - **No direct access**: the gateway strips client-supplied trust headers and stamps a secret
   `X-Internal-Token` on every request; each service rejects any call without it (even with a valid
   user token). Service-to-service Feign calls carry it too. Only container health probes and the
-  internal JWKS document are exempt.
+  internal JWKS document are exempt. For local development only, `GATEWAY_ONLY=false` in `.env` lets
+  each service be called directly on its own port (the JWT is still verified).
 - **No open API surface**: unauthenticated endpoints are only login, refresh and logout. Swagger is
   disabled by default (`SWAGGER_ENABLED=false`) and the signing-key endpoint is not routed by the
   gateway.
@@ -99,13 +100,18 @@ docker compose up -d --build
 
 ### First steps
 
+Full step-by-step API reference with payloads and responses: [docs/API_GUIDE.md](docs/API_GUIDE.md).
+Import [postman/Bank-Sathi.postman_collection.json](postman/Bank-Sathi.postman_collection.json) to run the same flow in Postman.
+
 0. Insert the platform owner row into `auth.users` yourself (tenant `platform`, role `SSA`,
    BCrypt password hash). No account is created automatically.
-1. `POST /api/v1/auth/login` with `{"tenantCode":"platform","username":"masteradmin","password":"..."}`.
+1. `POST /api/v1/auth/login` with `{"username":"masteradmin","password":"..."}`. Usernames are unique
+   across the platform, so no organization code is needed to sign in.
 2. `POST /api/v1/auth/change-password` (required on first sign-in), use the returned token.
-3. `POST /api/v1/platform/tenants` to provision an organization: creates its bank, headquarters
-   branch and Super Admin, and returns the admin's one-time password.
-4. Sign in as that admin (`tenantCode` = the organization code) and add branches, employees, etc.
+3. `POST /api/v1/platform/tenants` to register a client: creates the organization and its Super Admin
+   (no bank or branch yet) and returns the admin's one-time password.
+4. Sign in as that admin (username + password only) and add the client's banks (each gets a
+   headquarters branch), then more branches, employees, etc.
 
 ## Build locally
 

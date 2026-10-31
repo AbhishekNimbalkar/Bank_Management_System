@@ -1,6 +1,7 @@
 package com.bankmanagement.attendance.service;
 
 import com.bankmanagement.attendance.domain.AttendanceRecord;
+import com.bankmanagement.attendance.domain.Enums.AttendanceSource;
 import com.bankmanagement.attendance.domain.Enums.AttendanceStatus;
 import com.bankmanagement.attendance.domain.Enums.RequestStatus;
 import com.bankmanagement.attendance.domain.Regularization;
@@ -110,6 +111,7 @@ public class RegularizationService {
             record.setHoursWorked(AttendanceService.hoursBetween(r.getCheckIn(), r.getCheckOut()));
             record.setStatus(AttendanceStatus.PRESENT);
             record.setNote("Corrected via approved request");
+            record.setSource(AttendanceSource.CORRECTION);
             records.save(record);
         }
         audit.record("regs", approved ? "Approved correction" : "Rejected correction",

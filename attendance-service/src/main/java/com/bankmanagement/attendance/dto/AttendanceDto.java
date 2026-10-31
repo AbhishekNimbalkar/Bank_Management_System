@@ -32,15 +32,44 @@ public final class AttendanceDto {
             @DecimalMin("0.0") @DecimalMax("10000.0") Double accuracyMeters) {
     }
 
-    public record Response(UUID id, UUID userId, String employeeName, String employeeCode, UUID branchId,
+    /**
+     * HR, a Branch Manager or the Super Admin marks attendance for an employee who could not clock in
+     * (field visit, no phone). The coordinates are where the employee worked; they are recorded and the
+     * distance to the branch is shown, but the geofence is not enforced. Status is derived from the
+     * shift rules unless given.
+     */
+    public record ManualRequest(
+            @NotNull UUID employeeId,
+            @NotNull LocalDate workDate,
+            @NotNull @JsonFormat(pattern = "HH:mm") LocalTime checkIn,
+            @JsonFormat(pattern = "HH:mm") LocalTime checkOut,
+            @NotNull @DecimalMin("-90.0") @DecimalMax("90.0") Double latitude,
+            @NotNull @DecimalMin("-180.0") @DecimalMax("180.0") Double longitude,
+            Enums.AttendanceStatus status,
+            @NotBlank @Size(min = 5, max = 200) @Pattern(regexp = "^[^<>]*$") String reason) {
+    }
+
+    /** HR / Super Admin correction of an existing record. Times may be empty for ABSENT or leave statuses. */
+    public record EditRequest(
+            @JsonFormat(pattern = "HH:mm") LocalTime checkIn,
+            @JsonFormat(pattern = "HH:mm") LocalTime checkOut,
+            @NotNull Enums.AttendanceStatus status,
+            @NotBlank @Size(min = 5, max = 200) @Pattern(regexp = "^[^<>]*$") String reason) {
+    }
+
+    public record Response(UUID attendanceRecordId, UUID userId, String employeeName, String employeeCode, UUID branchId,
                            LocalDate workDate, @JsonFormat(pattern = "HH:mm") LocalTime checkIn,
                            @JsonFormat(pattern = "HH:mm") LocalTime checkOut, Enums.AttendanceStatus status,
-                           Integer distanceMeters, BigDecimal hoursWorked, String note) {
+                           Integer distanceMeters, BigDecimal hoursWorked, String note, Enums.AttendanceSource source,
+                           Double latitude, Double longitude, String markedByName, String editedByName,
+                           Instant editedAt, String editReason) {
 
         public static Response from(AttendanceRecord r) {
             return new Response(r.getId(), r.getSubject().getUserId(), r.getSubject().getEmployeeName(),
                     r.getSubject().getEmployeeCode(), r.getSubject().getBranchId(), r.getWorkDate(), r.getCheckIn(),
-                    r.getCheckOut(), r.getStatus(), r.getDistanceMeters(), r.getHoursWorked(), r.getNote());
+                    r.getCheckOut(), r.getStatus(), r.getDistanceMeters(), r.getHoursWorked(), r.getNote(),
+                    r.getSource(), r.getLatitude(), r.getLongitude(), r.getMarkedByName(), r.getEditedByName(),
+                    r.getEditedAt(), r.getEditReason());
         }
     }
 
@@ -66,7 +95,7 @@ public final class AttendanceDto {
             @NotBlank @Size(min = 5, max = 300) @Pattern(regexp = "^[^<>]*$") String reason) {
     }
 
-    public record CorrectionResponse(UUID id, UUID userId, String employeeName, String employeeCode,
+    public record CorrectionResponse(UUID regularizationId, UUID userId, String employeeName, String employeeCode,
                                      LocalDate workDate, @JsonFormat(pattern = "HH:mm") LocalTime checkIn,
                                      @JsonFormat(pattern = "HH:mm") LocalTime checkOut, String reason,
                                      Enums.RequestStatus status, UUID decidedBy, Instant decidedAt,

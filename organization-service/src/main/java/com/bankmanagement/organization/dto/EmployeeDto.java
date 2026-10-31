@@ -66,7 +66,7 @@ public final class EmployeeDto {
     }
 
     /** Account number is masked unless the viewer is HR/SA/platform owner or the employee themself. */
-    public record Response(UUID id, UUID userId, String code, String name, String username, String email,
+    public record Response(UUID employeeId, UUID userId, String code, String name, String username, String email,
                            String phone, String role, String designation, UUID bankId, String bankName,
                            UUID branchId, String branchName, boolean headquarters, String address,
                            LocalDate joinedOn, RecordStatus status, String salaryBankName,

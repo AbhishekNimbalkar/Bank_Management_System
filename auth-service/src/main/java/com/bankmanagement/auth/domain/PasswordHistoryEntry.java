@@ -22,6 +22,8 @@ public class PasswordHistoryEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "password_history_id")
+
     private UUID id;
 
     @Column(name = "user_id", nullable = false)

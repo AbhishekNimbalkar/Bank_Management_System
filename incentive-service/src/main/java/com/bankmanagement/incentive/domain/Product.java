@@ -1,6 +1,7 @@
 package com.bankmanagement.incentive.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "products", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "name"}))
+@AttributeOverride(name = "id", column = @Column(name = "product_id"))
 public class Product extends TenantScopedEntity {
 
     @Enumerated(EnumType.STRING)

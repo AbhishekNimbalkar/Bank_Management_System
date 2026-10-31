@@ -1,6 +1,7 @@
 package com.bankmanagement.organization.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,6 +16,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "designations")
+@AttributeOverride(name = "id", column = @Column(name = "designation_id"))
 public class Designation extends TenantScopedEntity {
 
     @Column(nullable = false, length = 60)

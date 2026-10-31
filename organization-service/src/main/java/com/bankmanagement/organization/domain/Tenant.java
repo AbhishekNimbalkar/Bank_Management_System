@@ -1,6 +1,7 @@
 package com.bankmanagement.organization.domain;
 
 import com.bankmanagement.common.persistence.BaseEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +20,7 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "tenants")
+@AttributeOverride(name = "id", column = @Column(name = "organization_id"))
 public class Tenant extends BaseEntity {
 
     public enum Plan { STARTER, GROWTH, PRO, ENTERPRISE }

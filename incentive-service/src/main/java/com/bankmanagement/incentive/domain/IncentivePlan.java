@@ -1,6 +1,7 @@
 package com.bankmanagement.incentive.domain;
 
 import com.bankmanagement.common.persistence.TenantScopedEntity;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,6 +24,7 @@ import java.math.BigDecimal;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "incentive_plans", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "plan_month", "name"}))
+@AttributeOverride(name = "id", column = @Column(name = "incentive_plan_id"))
 public class IncentivePlan extends TenantScopedEntity {
 
     @Column(nullable = false, length = 60)

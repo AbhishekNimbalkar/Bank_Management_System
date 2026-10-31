@@ -17,7 +17,7 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID>, JpaSp
 
     Optional<Employee> findByTenantCodeAndUserId(String tenantCode, UUID userId);
 
-    boolean existsByTenantCodeAndUsername(String tenantCode, String username);
+    boolean existsByUsername(String username);
 
     long countByTenantCodeAndStatus(String tenantCode, RecordStatus status);
 

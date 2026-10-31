@@ -25,6 +25,9 @@ import java.util.List;
  * internal token; a request without it (e.g. someone calling a service port directly, bypassing
  * the gateway's CORS, rate limiting and header sanitising) is rejected before authentication.
  * Container health probes and the public signing-key document are the only exceptions.
+ * <p>
+ * Local development may set {@code GATEWAY_ONLY=false} to call each service on its own port; the JWT
+ * is still verified by every service. Never disable it where the service ports are reachable.
  */
 @Slf4j
 @Component
@@ -36,20 +39,29 @@ public class GatewayOnlyFilter extends OncePerRequestFilter {
     private static final List<String> EXEMPT_PREFIXES = List.of("/actuator/health", "/.well-known/jwks.json");
 
     private final byte[] expected;
+    private final boolean enforced;
     private final ObjectMapper mapper;
 
     public GatewayOnlyFilter(@Value("${app.security.internal-token:${INTERNAL_API_TOKEN:}}") String token,
+                             @Value("${app.security.gateway-only:${GATEWAY_ONLY:true}}") boolean enforced,
                              ObjectMapper mapper) {
         if (token == null || token.length() < MIN_TOKEN_LENGTH) {
             throw new IllegalStateException("app.security.internal-token (INTERNAL_API_TOKEN) must be set to a random "
                     + "value of at least " + MIN_TOKEN_LENGTH + " characters.");
         }
         this.expected = token.getBytes(StandardCharsets.UTF_8);
+        this.enforced = enforced;
         this.mapper = mapper;
+        if (!enforced) {
+            log.warn("GATEWAY_ONLY=false: direct calls to this service port are accepted. Local development only.");
+        }
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        if (!enforced) {
+            return true;
+        }
         String path = request.getRequestURI();
         return EXEMPT_PREFIXES.stream().anyMatch(path::startsWith);
     }

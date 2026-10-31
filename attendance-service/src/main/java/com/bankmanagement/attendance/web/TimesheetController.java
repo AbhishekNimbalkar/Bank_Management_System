@@ -68,4 +68,28 @@ public class TimesheetController {
     public ApiResponse<TimesheetDto.Response> decide(@PathVariable UUID id, @Valid @RequestBody DecisionRequest request) {
         return ApiResponse.ok("Decision recorded.", timesheetService.decide(id, request));
     }
+
+    @Operation(summary = "Comments on an entry (visible to the employee, their managers and the Super Admin)")
+    @PreAuthorize("hasAuthority('timesheets:R')")
+    @GetMapping("/{id}/comments")
+    public ApiResponse<List<TimesheetDto.CommentResponse>> comments(@PathVariable UUID id) {
+        return ApiResponse.ok(timesheetService.comments(id));
+    }
+
+    @Operation(summary = "Comment on an employee's entry (manager senior to the employee, in scope)")
+    @PreAuthorize("hasAuthority('timesheets:U')")
+    @PostMapping("/{id}/comments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<TimesheetDto.CommentResponse> addComment(@PathVariable UUID id,
+                                                                @Valid @RequestBody TimesheetDto.CommentRequest request) {
+        return ApiResponse.ok("Comment added.", timesheetService.addComment(id, request));
+    }
+
+    @Operation(summary = "Delete my own comment")
+    @PreAuthorize("hasAuthority('timesheets:U')")
+    @DeleteMapping("/{id}/comments/{commentId}")
+    public ApiResponse<Void> deleteComment(@PathVariable UUID id, @PathVariable UUID commentId) {
+        timesheetService.deleteComment(id, commentId);
+        return ApiResponse.message("Comment deleted.");
+    }
 }

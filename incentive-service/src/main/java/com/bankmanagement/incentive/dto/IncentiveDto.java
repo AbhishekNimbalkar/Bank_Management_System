@@ -37,7 +37,7 @@ public final class IncentiveDto {
             boolean active) {
     }
 
-    public record ProductResponse(UUID id, Enums.ProductType type, String name, BigDecimal ratePercent, String tenure,
+    public record ProductResponse(UUID productId, Enums.ProductType type, String name, BigDecimal ratePercent, String tenure,
                                   boolean active) {
 
         public static ProductResponse from(Product p) {
@@ -58,7 +58,7 @@ public final class IncentiveDto {
             Enums.PlanStatus status) {
     }
 
-    public record PlanResponse(UUID id, String name, Enums.PlanCategory category, String month, BigDecimal target,
+    public record PlanResponse(UUID incentivePlanId, String name, Enums.PlanCategory category, String month, BigDecimal target,
                                int thresholdPercent, BigDecimal baseRatePercent, BigDecimal bonusRatePercent,
                                Enums.PlanStatus status) {
 
@@ -90,7 +90,7 @@ public final class IncentiveDto {
     public record Decision(@NotNull Boolean approved, @Size(max = 200) @Pattern(regexp = SAFE_TEXT) String note) {
     }
 
-    public record CustomerResponse(UUID id, String name, String mobile, UUID productId, String productName,
+    public record CustomerResponse(UUID customerId, String name, String mobile, UUID productId, String productName,
                                    Enums.ProductType productType, BigDecimal amount, Enums.CustomerStatus status,
                                    UUID ownerUserId, String ownerName, String ownerCode, UUID ownerBranchId,
                                    LocalDate leadDate, LocalDate convertedDate, String notes, UUID makerId,

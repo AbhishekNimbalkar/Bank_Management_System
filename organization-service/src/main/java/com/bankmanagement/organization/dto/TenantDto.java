@@ -41,7 +41,23 @@ public final class TenantDto {
         }
     }
 
-    /** Provisions an organization with its first bank, headquarters branch and Super Admin. */
+    /** Postal address of the client company's head office. GPS is only needed later, per branch. */
+    public record Address(
+            @NotBlank @Size(max = 40) @Pattern(regexp = Patterns.SAFE_TEXT) String state,
+            @NotBlank @Size(max = 60) @Pattern(regexp = Patterns.SAFE_TEXT) String city,
+            @NotBlank @Pattern(regexp = Patterns.PINCODE, message = "must be a valid 6-digit pincode") String pincode,
+            @Size(max = 120) @Pattern(regexp = Patterns.SAFE_TEXT) String street) {
+
+        public String formatted() {
+            String prefix = street == null || street.isBlank() ? "" : street.trim() + ", ";
+            return prefix + city.trim() + ", " + state.trim() + " - " + pincode;
+        }
+    }
+
+    /**
+     * Registers a client: its company details and the Super Admin login only. The client adds its own
+     * banks and branches afterwards.
+     */
     public record CreateRequest(
             @NotBlank @Pattern(regexp = Patterns.TENANT_CODE, message = "3-20 lower-case letters/digits, starting with a letter")
             String code,
@@ -50,7 +66,7 @@ public final class TenantDto {
             @NotNull @Valid Limits limits,
             @NotNull Features features,
             @NotNull @Valid Admin admin,
-            @NotNull @Valid LocationDto headquarters) {
+            @NotNull @Valid Address headquarters) {
     }
 
     public record UpdateRequest(
@@ -77,7 +93,7 @@ public final class TenantDto {
                                  @NotBlank @Size(min = 5, max = 200) @Pattern(regexp = Patterns.SAFE_TEXT) String reason) {
     }
 
-    public record Response(UUID id, String code, String organizationName, String headquarters, Tenant.Plan plan,
+    public record Response(UUID organizationId, String code, String organizationName, String headquarters, Tenant.Plan plan,
                            Tenant.Status status, Limits limits, Features features, Usage usage, String adminName,
                            String adminUsername, String adminEmail, String adminPhone, UUID adminUserId,
                            Instant createdAt) {

@@ -22,7 +22,7 @@ public interface OrganizationClient {
     record Entitlements(boolean active, int maxCustomers, Features features) {
     }
 
-    record Employee(UUID id, UUID userId, String code, String name, String role, String designation,
+    record Employee(UUID employeeId, UUID userId, String code, String name, String role, String designation,
                     UUID branchId, String branchName, String status) {
     }
 }
