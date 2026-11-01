@@ -29,13 +29,19 @@ public interface AuthClient {
     @PostMapping("/api/v1/auth/impersonate/{userId}")
     ApiResponse<Object> impersonate(@PathVariable("userId") UUID userId);
 
-    @PatchMapping("/api/v1/users/{userId}/lock")
+    @PutMapping("/api/v1/users/{userId}/lock")
     ApiResponse<Void> setLocked(@PathVariable("userId") UUID userId, @RequestBody LockCommand command);
 
-    @PatchMapping("/api/v1/users/{userId}/status")
+    @PostMapping("/api/v1/users/lock-statuses")
+    ApiResponse<java.util.Map<UUID, Boolean>> getLockStatuses(@RequestBody java.util.List<UUID> userIds);
+
+    @org.springframework.web.bind.annotation.GetMapping("/api/v1/users/{userId}/lock-status")
+    ApiResponse<Boolean> getLockStatus(@PathVariable("userId") UUID userId);
+
+    @PutMapping("/api/v1/users/{userId}/status")
     ApiResponse<Void> setStatus(@PathVariable("userId") UUID userId, @RequestBody StatusCommand command);
 
-    @PatchMapping("/api/v1/users/{userId}/assignment")
+    @PutMapping("/api/v1/users/{userId}/assignment")
     ApiResponse<Void> updateAssignment(@PathVariable("userId") UUID userId, @RequestBody AssignmentCommand command);
 
     @PutMapping("/api/v1/admin/tenants/{tenantCode}/status")

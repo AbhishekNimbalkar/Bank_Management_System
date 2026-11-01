@@ -16,11 +16,13 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -51,7 +53,7 @@ public class UserAdminController {
 
     @Operation(summary = "Lock or unlock a user account")
     @PreAuthorize("hasAuthority('employees:U')")
-    @PatchMapping("/{userId}/lock")
+    @RequestMapping(value = "/{userId}/lock", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ApiResponse<Void> lock(@PathVariable UUID userId, @Valid @RequestBody UserLockRequest request) {
         userAdminService.setLocked(userId, request.locked());
         return ApiResponse.message(request.locked() ? "Account locked." : "Account unlocked.");
@@ -59,7 +61,7 @@ public class UserAdminController {
 
     @Operation(summary = "Change a user's role and/or branch (signs the user out)")
     @PreAuthorize("hasAuthority('employees:U')")
-    @PatchMapping("/{userId}/assignment")
+    @RequestMapping(value = "/{userId}/assignment", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ApiResponse<Void> assignment(@PathVariable UUID userId, @Valid @RequestBody UserAssignmentRequest request) {
         userAdminService.updateAssignment(userId, request.role(), request.branchId());
         return ApiResponse.message("Assignment updated.");
@@ -67,9 +69,23 @@ public class UserAdminController {
 
     @Operation(summary = "Activate or deactivate a user account")
     @PreAuthorize("hasAuthority('employees:U')")
-    @PatchMapping("/{userId}/status")
+    @RequestMapping(value = "/{userId}/status", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ApiResponse<Void> status(@PathVariable UUID userId, @Valid @RequestBody UserStatusRequest request) {
         userAdminService.setStatus(userId, request.status());
         return ApiResponse.message("Status updated.");
+    }
+
+    @Operation(summary = "Batch retrieve lock statuses for user IDs")
+    @PreAuthorize("hasAuthority('employees:R')")
+    @PostMapping("/lock-statuses")
+    public ApiResponse<java.util.Map<UUID, Boolean>> lockStatuses(@RequestBody java.util.List<UUID> userIds) {
+        return ApiResponse.ok(userAdminService.getLockStatuses(userIds));
+    }
+
+    @Operation(summary = "Get lock status for a single user ID")
+    @PreAuthorize("hasAuthority('employees:R')")
+    @GetMapping("/{userId}/lock-status")
+    public ApiResponse<Boolean> lockStatus(@PathVariable UUID userId) {
+        return ApiResponse.ok(userAdminService.getLockStatus(userId));
     }
 }

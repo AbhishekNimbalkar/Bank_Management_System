@@ -17,7 +17,6 @@ import org.hibernate.annotations.SQLRestriction;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "banks")
-@AttributeOverride(name = "id", column = @Column(name = "bank_id"))
 public class Bank extends TenantScopedEntity {
 
     @Column(nullable = false, length = 80)

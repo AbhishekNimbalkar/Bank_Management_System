@@ -21,7 +21,6 @@ import java.util.UUID;
 @SQLRestriction("deleted_at IS NULL")
 // Username is unique platform-wide among non-deleted rows (partial index ux_users_username, V3 migration).
 @Table(name = "users")
-@AttributeOverride(name = "id", column = @Column(name = "user_id"))
 public class UserAccount extends TenantScopedEntity {
 
     @Column(nullable = false, length = 32)

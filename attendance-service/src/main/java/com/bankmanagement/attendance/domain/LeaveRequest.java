@@ -22,7 +22,6 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "leave_requests")
-@AttributeOverride(name = "id", column = @Column(name = "leave_request_id"))
 public class LeaveRequest extends TenantScopedEntity {
 
     @Embedded

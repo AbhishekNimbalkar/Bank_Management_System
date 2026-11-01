@@ -1,5 +1,6 @@
 package com.bankmanagement.organization.service;
 
+import com.bankmanagement.common.api.ApiResponse;
 import com.bankmanagement.common.api.PageResponse;
 import com.bankmanagement.common.audit.AuditPublisher;
 import com.bankmanagement.common.exception.BusinessException;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -80,7 +82,24 @@ public class EmployeeService {
         Map<UUID, Branch> branches = branchService.byId(tenant);
         Map<UUID, String> bankNames = banks.findByTenantCodeOrderByNameAsc(tenant).stream()
                 .collect(Collectors.toMap(Bank::getId, Bank::getName, (a, b) -> a));
-        return PageResponse.of(result, e -> toResponse(e, branches.get(e.getBranchId()), bankNames, false));
+
+        List<UUID> userIds = result.getContent().stream()
+                .map(Employee::getUserId)
+                .filter(Objects::nonNull)
+                .toList();
+        Map<UUID, Boolean> lockMap = Collections.emptyMap();
+        if (!userIds.isEmpty()) {
+            try {
+                ApiResponse<Map<UUID, Boolean>> resp = authClient.getLockStatuses(userIds);
+                if (resp != null && resp.data() != null) {
+                    lockMap = resp.data();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        final Map<UUID, Boolean> finalLockMap = lockMap;
+        return PageResponse.of(result, e -> toResponse(e, branches.get(e.getBranchId()), bankNames, false,
+                finalLockMap.getOrDefault(e.getUserId(), false)));
     }
 
     /** Own profile, available to every employee regardless of the employees permission. */
@@ -313,12 +332,22 @@ public class EmployeeService {
         Branch branch = e.getBranchId() == null ? null : branchService.find(tenant, e.getBranchId());
         String bankName = e.getBankId() == null ? null
                 : banks.findByIdAndTenantCode(e.getBankId(), tenant).map(Bank::getName).orElse(null);
+        boolean locked = false;
+        if (e.getUserId() != null) {
+            try {
+                ApiResponse<Boolean> resp = authClient.getLockStatus(e.getUserId());
+                if (resp != null && resp.data() != null) {
+                    locked = resp.data();
+                }
+            } catch (Exception ignored) {
+            }
+        }
         return EmployeeDto.Response.from(e, bankName, branch == null ? null : branch.getName(),
-                branch != null && branch.isHeadquarters(), reveal);
+                branch != null && branch.isHeadquarters(), reveal, locked);
     }
 
-    private static EmployeeDto.Response toResponse(Employee e, Branch branch, Map<UUID, String> bankNames, boolean reveal) {
+    private static EmployeeDto.Response toResponse(Employee e, Branch branch, Map<UUID, String> bankNames, boolean reveal, boolean locked) {
         return EmployeeDto.Response.from(e, bankNames.get(e.getBankId()), branch == null ? null : branch.getName(),
-                branch != null && branch.isHeadquarters(), reveal);
+                branch != null && branch.isHeadquarters(), reveal, locked);
     }
 }

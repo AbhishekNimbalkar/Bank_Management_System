@@ -20,7 +20,6 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "branches")
-@AttributeOverride(name = "id", column = @Column(name = "branch_id"))
 public class Branch extends TenantScopedEntity {
 
     @Column(name = "bank_id", nullable = false)

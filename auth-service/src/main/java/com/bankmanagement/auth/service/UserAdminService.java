@@ -101,6 +101,34 @@ public class UserAdminService {
         audit.record("employees", locked ? "Locked account" : "Unlocked account", target.getUsername());
     }
 
+    @Transactional(readOnly = true)
+    public java.util.Map<UUID, Boolean> getLockStatuses(java.util.List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return java.util.Collections.emptyMap();
+        }
+        Instant now = Instant.now();
+        String tenant = SecurityUtils.currentTenant();
+        java.util.List<UserAccount> targets = users.findAllById(userIds);
+        java.util.Map<UUID, Boolean> map = new java.util.HashMap<>();
+        for (UserAccount u : targets) {
+            if (tenant.equals(u.getTenantCode())) {
+                map.put(u.getId(), u.isAdminLocked() || u.isTemporarilyLocked(now));
+            }
+        }
+        return map;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean getLockStatus(UUID userId) {
+        if (userId == null) {
+            return false;
+        }
+        String tenant = SecurityUtils.currentTenant();
+        return users.findByIdAndTenantCode(userId, tenant)
+                .map(u -> u.isAdminLocked() || u.isTemporarilyLocked(Instant.now()))
+                .orElse(false);
+    }
+
     @Transactional
     public void setStatus(UUID userId, UserStatus status) {
         UserAccount target = manageable(userId, "employees", 'U');

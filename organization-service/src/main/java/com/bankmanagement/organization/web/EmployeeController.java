@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -89,10 +90,18 @@ public class EmployeeController {
 
     @Operation(summary = "Lock or unlock the employee's login")
     @PreAuthorize("hasAuthority('employees:U')")
-    @PatchMapping("/{id}/lock")
+    @RequestMapping(value = "/{id}/lock", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ApiResponse<Void> lock(@PathVariable UUID id, @Valid @RequestBody EmployeeDto.LockRequest request) {
         employeeService.setLocked(id, request.locked());
         return ApiResponse.message(request.locked() ? "Account locked." : "Account unlocked.");
+    }
+
+    @Operation(summary = "Explicitly unlock the employee's login account")
+    @PreAuthorize("hasAuthority('employees:U')")
+    @PostMapping("/{id}/unlock")
+    public ApiResponse<Void> unlock(@PathVariable UUID id) {
+        employeeService.setLocked(id, false);
+        return ApiResponse.message("Account unlocked.");
     }
 
     @Operation(summary = "Reset the employee's password to a one-time password")

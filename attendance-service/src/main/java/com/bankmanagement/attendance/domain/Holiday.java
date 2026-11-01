@@ -18,7 +18,6 @@ import java.time.LocalDate;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "holidays")
-@AttributeOverride(name = "id", column = @Column(name = "holiday_id"))
 public class Holiday extends TenantScopedEntity {
 
     @Column(name = "holiday_date", nullable = false)

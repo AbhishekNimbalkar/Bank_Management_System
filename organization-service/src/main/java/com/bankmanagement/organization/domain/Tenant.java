@@ -20,7 +20,6 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "tenants")
-@AttributeOverride(name = "id", column = @Column(name = "organization_id"))
 public class Tenant extends BaseEntity {
 
     public enum Plan { STARTER, GROWTH, PRO, ENTERPRISE }

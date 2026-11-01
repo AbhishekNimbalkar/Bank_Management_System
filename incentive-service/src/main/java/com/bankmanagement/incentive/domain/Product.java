@@ -20,7 +20,6 @@ import java.math.BigDecimal;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "products", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "name"}))
-@AttributeOverride(name = "id", column = @Column(name = "product_id"))
 public class Product extends TenantScopedEntity {
 
     @Enumerated(EnumType.STRING)

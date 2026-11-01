@@ -24,7 +24,6 @@ import java.math.BigDecimal;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "incentive_plans", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "plan_month", "name"}))
-@AttributeOverride(name = "id", column = @Column(name = "incentive_plan_id"))
 public class IncentivePlan extends TenantScopedEntity {
 
     @Column(nullable = false, length = 60)

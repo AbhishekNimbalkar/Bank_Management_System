@@ -70,15 +70,20 @@ public final class EmployeeDto {
                            String phone, String role, String designation, UUID bankId, String bankName,
                            UUID branchId, String branchName, boolean headquarters, String address,
                            LocalDate joinedOn, RecordStatus status, String salaryBankName,
-                           String salaryBranchAddress, String salaryAccountNumber, String salaryIfsc) {
+                           String salaryBranchAddress, String salaryAccountNumber, String salaryIfsc,
+                           boolean locked) {
 
-        public static Response from(Employee e, String bankName, String branchName, boolean hq, boolean revealAccount) {
+        public static Response from(Employee e, String bankName, String branchName, boolean hq, boolean revealAccount, boolean locked) {
             String account = e.getSalaryAccountLast4() == null ? null
                     : revealAccount ? e.getSalaryAccountNumber() : "XXXXXX" + e.getSalaryAccountLast4();
             return new Response(e.getId(), e.getUserId(), e.getCode(), e.getName(), e.getUsername(), e.getEmail(),
                     e.getPhone(), e.getRole(), e.getDesignation(), e.getBankId(), bankName, e.getBranchId(),
                     branchName, hq, e.getAddress(), e.getJoinedOn(), e.getStatus(), e.getSalaryBankName(),
-                    e.getSalaryBranchAddress(), account, e.getSalaryIfsc());
+                    e.getSalaryBranchAddress(), account, e.getSalaryIfsc(), locked);
+        }
+
+        public static Response from(Employee e, String bankName, String branchName, boolean hq, boolean revealAccount) {
+            return from(e, bankName, branchName, hq, revealAccount, false);
         }
     }
 

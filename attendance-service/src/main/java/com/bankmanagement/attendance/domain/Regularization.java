@@ -23,7 +23,6 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "regularizations")
-@AttributeOverride(name = "id", column = @Column(name = "regularization_id"))
 public class Regularization extends TenantScopedEntity {
 
     @Embedded

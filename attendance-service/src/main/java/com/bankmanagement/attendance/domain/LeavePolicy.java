@@ -17,7 +17,6 @@ import java.math.BigDecimal;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "leave_policies", uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "code"}))
-@AttributeOverride(name = "id", column = @Column(name = "leave_policy_id"))
 public class LeavePolicy extends TenantScopedEntity {
 
     @Column(nullable = false, length = 60)

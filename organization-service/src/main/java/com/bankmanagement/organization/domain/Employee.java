@@ -25,7 +25,6 @@ import java.util.UUID;
 @Table(name = "employees", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"tenant_code", "code"}),
         @UniqueConstraint(columnNames = {"tenant_code", "username"})})
-@AttributeOverride(name = "id", column = @Column(name = "employee_id"))
 public class Employee extends TenantScopedEntity {
 
     @Column(name = "user_id")

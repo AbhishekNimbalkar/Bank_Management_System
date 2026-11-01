@@ -19,7 +19,7 @@ UPDATE attendance_records SET source = 'CORRECTION' WHERE note = 'Corrected via 
 CREATE TABLE timesheet_comments (
     timesheet_comment_id UUID PRIMARY KEY,
     tenant_code          VARCHAR(40)  NOT NULL,
-    timesheet_id         UUID         NOT NULL REFERENCES timesheets (timesheet_id),
+    timesheet_id         UUID         NOT NULL REFERENCES timesheets (id),
     author_user_id       UUID         NOT NULL,
     author_name          VARCHAR(80)  NOT NULL,
     author_role          VARCHAR(10)  NOT NULL,

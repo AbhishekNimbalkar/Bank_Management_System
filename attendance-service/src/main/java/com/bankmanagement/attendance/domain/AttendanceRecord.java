@@ -26,7 +26,6 @@ import java.util.UUID;
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "attendance_records",
         uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "user_id", "work_date"}))
-@AttributeOverride(name = "id", column = @Column(name = "attendance_record_id"))
 public class AttendanceRecord extends TenantScopedEntity {
 
     @Embedded

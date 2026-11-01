@@ -22,7 +22,6 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "timesheets")
-@AttributeOverride(name = "id", column = @Column(name = "timesheet_id"))
 public class Timesheet extends TenantScopedEntity {
 
     @Embedded

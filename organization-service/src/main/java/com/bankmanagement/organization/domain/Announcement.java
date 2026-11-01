@@ -18,7 +18,6 @@ import java.util.UUID;
 @Entity
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "announcements")
-@AttributeOverride(name = "id", column = @Column(name = "announcement_id"))
 public class Announcement extends TenantScopedEntity {
 
     @Column(nullable = false, length = 120)

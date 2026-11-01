@@ -3,7 +3,6 @@ target/
 .idea/
 .vscode/
 *.log
-.env
 *.pem
 .DS_Store
 /.project

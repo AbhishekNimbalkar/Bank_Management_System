@@ -17,7 +17,6 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("deleted_at IS NULL")
 @Table(name = "role_permissions",
         uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_code", "role_code", "module"}))
-@AttributeOverride(name = "id", column = @Column(name = "role_permission_id"))
 public class RolePermission extends TenantScopedEntity {
 
     @Column(name = "role_code", nullable = false, length = 10)
