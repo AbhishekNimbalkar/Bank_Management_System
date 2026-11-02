@@ -4,10 +4,8 @@ import com.bankmanagement.common.audit.AuditPublisher;
 import com.bankmanagement.common.exception.BusinessException;
 import com.bankmanagement.common.security.SecurityUtils;
 import com.bankmanagement.organization.domain.Bank;
-import com.bankmanagement.organization.domain.Branch;
 import com.bankmanagement.organization.domain.RecordStatus;
 import com.bankmanagement.organization.dto.BankDto;
-import com.bankmanagement.organization.dto.LocationDto;
 import com.bankmanagement.organization.repository.BankLogoRepository;
 import com.bankmanagement.organization.repository.BankRepository;
 import com.bankmanagement.organization.repository.BranchRepository;
@@ -22,8 +20,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BankService {
-
-    static final int HQ_RADIUS_METERS = 200;
 
     private final BankRepository banks;
     private final BranchRepository branches;
@@ -48,45 +44,30 @@ public class BankService {
                 logos.existsByBankIdAndTenantCode(id, tenant));
     }
 
-    /** Creates the bank and its headquarters branch at the registered address. */
+    /**
+     * Registers the bank only. Branches are added afterwards through the branch API; the first branch
+     * added to a bank becomes its headquarters.
+     */
     @Transactional
     public BankDto.Response create(BankDto.Request req) {
         String tenant = SecurityUtils.currentTenant();
-        Bank bank = createWithHeadquarters(tenant, req.name(), req.code(), req.location());
-        audit.record("banks", "Created bank", bank.getName() + " (" + bank.getCode() + ") with headquarters branch");
-        return BankDto.Response.from(bank, 1, false);
-    }
-
-    /** Also used when a new organization is provisioned. */
-    Bank createWithHeadquarters(String tenant, String name, String requestedCode, LocationDto location) {
         quotaService.assertCanAddBank(tenant);
-        quotaService.assertCanAddBranch(tenant);
 
-        String code = requestedCode != null && !requestedCode.isBlank() ? requestedCode
-                : CodeGenerator.bankCode(name, c -> banks.existsByTenantCodeAndCode(tenant, c));
+        String code = req.code() != null && !req.code().isBlank() ? req.code()
+                : CodeGenerator.bankCode(req.name(), c -> banks.existsByTenantCodeAndCode(tenant, c));
         if (banks.existsByTenantCodeAndCode(tenant, code)) {
             throw BusinessException.conflict("Bank code " + code + " is already used.", "code");
         }
 
         Bank bank = new Bank();
         bank.setTenantCode(tenant);
-        bank.setName(name.trim());
+        bank.setName(req.name().trim());
         bank.setCode(code);
-        location.applyTo(bank.getLocation());
-        bank.setStatus(RecordStatus.ACTIVE);
+        req.location().applyTo(bank.getLocation());
+        bank.setStatus(req.status() == null ? RecordStatus.ACTIVE : req.status());
         banks.save(bank);
-
-        Branch hq = new Branch();
-        hq.setTenantCode(tenant);
-        hq.setBankId(bank.getId());
-        hq.setName(location.city().trim() + " Headquarters");
-        hq.setIfsc(CodeGenerator.ifsc(code, i -> branches.existsByTenantCodeAndIfsc(tenant, i)));
-        location.applyTo(hq.getLocation());
-        hq.setRadiusMeters(HQ_RADIUS_METERS);
-        hq.setHeadquarters(true);
-        hq.setStatus(RecordStatus.ACTIVE);
-        branches.save(hq);
-        return bank;
+        audit.record("banks", "Created bank", bank.getName() + " (" + bank.getCode() + ")");
+        return BankDto.Response.from(bank, 0, false);
     }
 
     @Transactional

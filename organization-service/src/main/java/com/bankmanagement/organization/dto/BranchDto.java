@@ -23,7 +23,9 @@ public final class BranchDto {
             @NotBlank @Pattern(regexp = Patterns.IFSC, message = "must look like ABCD0123456") String ifsc,
             @NotNull @Valid LocationDto location,
             @NotNull @Min(50) @Max(1000) Integer radiusMeters,
-            RecordStatus status) {
+            RecordStatus status,
+            /* true marks this as the bank's headquarters; the first branch of a bank is always headquarters. */
+            Boolean headquarters) {
     }
 
     public record Response(UUID branchId, UUID bankId, String bankName, String name, String ifsc, LocationDto location,

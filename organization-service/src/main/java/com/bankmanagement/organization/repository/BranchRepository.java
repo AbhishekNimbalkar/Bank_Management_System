@@ -30,4 +30,6 @@ public interface BranchRepository extends JpaRepository<Branch, UUID> {
     List<Object[]> countPerBank();
 
     long countByTenantCodeAndBankId(String tenantCode, UUID bankId);
+
+    Optional<Branch> findByTenantCodeAndBankIdAndHeadquartersTrue(String tenantCode, UUID bankId);
 }

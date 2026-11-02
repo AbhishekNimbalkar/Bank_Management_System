@@ -50,7 +50,7 @@ public class BankController {
         return ApiResponse.ok(bankService.get(id));
     }
 
-    @Operation(summary = "Register a bank; its headquarters branch is created automatically")
+    @Operation(summary = "Register a bank (bank details only); add its branches afterwards via /api/v1/branches")
     @PreAuthorize("hasAuthority('banks:C')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

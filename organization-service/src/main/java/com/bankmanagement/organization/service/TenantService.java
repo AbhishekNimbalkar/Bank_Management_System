@@ -123,7 +123,8 @@ public class TenantService {
         }
         TenantDto.Usage usage = quotaService.usage(code);
         TenantDto.Limits l = req.limits();
-        if (l.maxBanks() < usage.banks() || l.maxBranches() < usage.branches()
+        if (l.maxBanks() < usage.banks()
+                || (QuotaService.BRANCH_LIMIT_ENABLED && l.maxBranches() < usage.branches())
                 || l.maxEmployees() < usage.activeEmployees()) {
             throw BusinessException.rule("Limits cannot be set below current usage (" + usage.banks() + " banks, "
                     + usage.branches() + " branches, " + usage.activeEmployees() + " active employees).");

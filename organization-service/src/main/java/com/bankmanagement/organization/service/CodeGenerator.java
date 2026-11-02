@@ -3,7 +3,7 @@ package com.bankmanagement.organization.service;
 import java.util.Locale;
 import java.util.function.Predicate;
 
-/** Generates bank codes and IFSC-format codes for auto-created headquarters branches. */
+/** Generates bank codes and employee-code prefixes. */
 final class CodeGenerator {
 
     private CodeGenerator() {
@@ -24,18 +24,6 @@ final class CodeGenerator {
             code = base + i;
         }
         return code;
-    }
-
-    /** IFSC = 4 letters + '0' + 6 alphanumerics. Letters are derived from the bank code. */
-    static String ifsc(String bankCode, Predicate<String> taken) {
-        String letters = (bankCode.replaceAll("[^A-Z]", "") + "XXXX").substring(0, 4);
-        for (int n = 1; n < 1_000_000; n++) {
-            String candidate = letters + "0" + String.format("%06d", n);
-            if (!taken.test(candidate)) {
-                return candidate;
-            }
-        }
-        throw new IllegalStateException("IFSC space exhausted for " + letters);
     }
 
     static String employeePrefix(String tenantCode) {

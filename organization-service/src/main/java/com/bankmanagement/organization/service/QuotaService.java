@@ -18,6 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class QuotaService {
 
+    /**
+     * Branch ceilings (max_branches and the multi-branch feature) are not enforced for now: a bank may have any
+     * number of branches. The tenant settings are kept so the limit can be switched back on.
+     */
+    static final boolean BRANCH_LIMIT_ENABLED = false;
+
     private final TenantRepository tenants;
     private final BankRepository banks;
     private final BranchRepository branches;
@@ -35,7 +41,7 @@ public class QuotaService {
         TenantDto.Usage u = usage(tenantCode);
         return new TenantDto.Quota(
                 new TenantDto.Limits(t.getMaxBanks(), t.getMaxBranches(), t.getMaxEmployees(), t.getMaxCustomers()),
-                u, u.banks() < t.getMaxBanks(), u.branches() < t.getMaxBranches(),
+                u, u.banks() < t.getMaxBanks(), !BRANCH_LIMIT_ENABLED || u.branches() < t.getMaxBranches(),
                 u.activeEmployees() < t.getMaxEmployees());
     }
 
@@ -59,6 +65,9 @@ public class QuotaService {
 
     public void assertCanAddBranch(String tenantCode) {
         Tenant t = locked(tenantCode);
+        if (!BRANCH_LIMIT_ENABLED) {
+            return;
+        }
         long used = branches.countByTenantCode(tenantCode);
         if (!t.isMultiBranch() && used >= 1) {
             throw new BusinessException(ErrorCode.QUOTA_EXCEEDED, "Your plan does not include multiple branches.");
