@@ -66,7 +66,7 @@ public class BranchController {
         return ApiResponse.ok("Branch updated.", branchService.update(id, request));
     }
 
-    @Operation(summary = "Delete a branch without staff (headquarters cannot be deleted)")
+    @Operation(summary = "Delete a branch without staff (headquarters only when it is the bank's last branch)")
     @PreAuthorize("hasAuthority('branches:D')")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable UUID id) {

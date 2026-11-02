@@ -67,14 +67,15 @@ public class BranchService {
     public BranchDto.Response create(BranchDto.Request req) {
         String tenant = SecurityUtils.currentTenant();
         quotaService.assertCanAddBranch(tenant);
-        Bank bank = banks.findByIdAndTenantCode(req.bankId(), tenant)
-                .orElseThrow(() -> BusinessException.validation("Select a valid bank.", "bankId"));
+        Bank bank = activeBank(tenant, req.bankId());
         if (branches.existsByTenantCodeAndIfsc(tenant, req.ifsc())) {
             throw BusinessException.conflict("IFSC " + req.ifsc() + " is already registered.", "ifsc");
         }
         Branch branch = new Branch();
         branch.setTenantCode(tenant);
         branch.setBankId(bank.getId());
+        // The first branch registered for a bank is its headquarters.
+        branch.setHeadquarters(branches.countByTenantCodeAndBankId(tenant, bank.getId()) == 0);
         apply(branch, req);
         branches.save(branch);
         audit.record("branches", "Created branch", branch.getName() + " (" + branch.getIfsc() + ")");
@@ -89,8 +90,11 @@ public class BranchService {
             throw BusinessException.conflict("IFSC " + req.ifsc() + " is already registered.", "ifsc");
         }
         if (!branch.getBankId().equals(req.bankId())) {
-            banks.findByIdAndTenantCode(req.bankId(), tenant)
-                    .orElseThrow(() -> BusinessException.validation("Select a valid bank.", "bankId"));
+            if (branch.isHeadquarters() && branches.countByTenantCodeAndBankId(tenant, branch.getBankId()) > 1) {
+                throw BusinessException.rule("The headquarters branch cannot be moved while its bank has other branches.");
+            }
+            activeBank(tenant, req.bankId());
+            branch.setHeadquarters(branches.countByTenantCodeAndBankId(tenant, req.bankId()) == 0);
             branch.setBankId(req.bankId());
         }
         apply(branch, req);
@@ -103,8 +107,8 @@ public class BranchService {
     public void delete(UUID id) {
         String tenant = SecurityUtils.currentTenant();
         Branch branch = find(tenant, id);
-        if (branch.isHeadquarters()) {
-            throw BusinessException.rule("The headquarters branch cannot be deleted.");
+        if (branch.isHeadquarters() && branches.countByTenantCodeAndBankId(tenant, branch.getBankId()) > 1) {
+            throw BusinessException.rule("The headquarters branch cannot be deleted while its bank has other branches.");
         }
         long staff = employees.countByTenantCodeAndBranchId(tenant, id);
         if (staff > 0) {
@@ -119,6 +123,15 @@ public class BranchService {
 
     Branch find(String tenant, UUID id) {
         return branches.findByIdAndTenantCode(id, tenant).orElseThrow(() -> BusinessException.notFound("Branch"));
+    }
+
+    private Bank activeBank(String tenant, UUID bankId) {
+        Bank bank = banks.findByIdAndTenantCode(bankId, tenant)
+                .orElseThrow(() -> BusinessException.validation("Select a valid bank.", "bankId"));
+        if (bank.getStatus() != RecordStatus.ACTIVE) {
+            throw BusinessException.validation("Bank " + bank.getName() + " is not active.", "bankId");
+        }
+        return bank;
     }
 
     private void apply(Branch branch, BranchDto.Request req) {

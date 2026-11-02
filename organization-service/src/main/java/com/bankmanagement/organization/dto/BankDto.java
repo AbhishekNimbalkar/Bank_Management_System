@@ -34,4 +34,12 @@ public final class BankDto {
                     b.getLocation().getAddress(), b.getStatus(), branchCount, hasLogo);
         }
     }
+
+    /** Dropdown entry shown when choosing the bank a new branch belongs to. */
+    public record Option(UUID bankId, String name, String code) {
+
+        public static Option from(Bank b) {
+            return new Option(b.getId(), b.getName(), b.getCode());
+        }
+    }
 }

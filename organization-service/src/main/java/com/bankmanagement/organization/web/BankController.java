@@ -43,6 +43,13 @@ public class BankController {
         return ApiResponse.ok(bankService.list());
     }
 
+    @Operation(summary = "Active banks for the bank dropdown on the add/edit branch form")
+    @PreAuthorize("hasAnyAuthority('banks:R', 'branches:C', 'branches:U')")
+    @GetMapping("/options")
+    public ApiResponse<List<BankDto.Option>> options() {
+        return ApiResponse.ok(bankService.options());
+    }
+
     @Operation(summary = "Get a bank")
     @PreAuthorize("hasAuthority('banks:R')")
     @GetMapping("/{id}")
@@ -50,7 +57,7 @@ public class BankController {
         return ApiResponse.ok(bankService.get(id));
     }
 
-    @Operation(summary = "Register a bank; its headquarters branch is created automatically")
+    @Operation(summary = "Register a bank (branches are added separately)")
     @PreAuthorize("hasAuthority('banks:C')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

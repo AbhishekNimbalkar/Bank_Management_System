@@ -110,8 +110,10 @@ Import [postman/Bank-Sathi.postman_collection.json](postman/Bank-Sathi.postman_c
 2. `POST /api/v1/auth/change-password` (required on first sign-in), use the returned token.
 3. `POST /api/v1/platform/tenants` to register a client: creates the organization and its Super Admin
    (no bank or branch yet) and returns the admin's one-time password.
-4. Sign in as that admin (username + password only) and add the client's banks (each gets a
-   headquarters branch), then more branches, employees, etc.
+4. Sign in as that admin (username + password only) and add the client's banks
+   (`POST /api/v1/banks`). Then add branches separately (`POST /api/v1/branches`): the form's bank
+   dropdown is filled from `GET /api/v1/banks/options` (active banks only) and the chosen `bankId`
+   is sent with the branch. The first branch of a bank becomes its headquarters. Then employees, etc.
 
 ## Build locally
 
