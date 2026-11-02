@@ -2,14 +2,14 @@
 # One Dockerfile for every service:  docker build --build-arg MODULE=auth-service -t bankmanagement/auth-service .
 
 FROM maven:3.9.9-eclipse-temurin-17 AS build
-ARG MODULE
+ARG MODULE=api-gateway
 WORKDIR /workspace
 COPY . .
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B -q -pl ${MODULE} -am package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
-ARG MODULE
+ARG MODULE=api-gateway
 LABEL org.opencontainers.image.title="bankmanagement-${MODULE}" \
       org.opencontainers.image.vendor="Bank Management System"
 

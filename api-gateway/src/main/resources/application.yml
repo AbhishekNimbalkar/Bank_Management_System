@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8088}
 
 spring:
   application:
@@ -46,7 +46,7 @@ spring:
         - id: audit-service
           uri: lb://audit-service
           predicates:
-            - Path=/api/v1/audit-logs/**
+            - Path=/api/v1/audit-logs/**,/api/v1/audit-logs
         # OpenAPI documents of each service, aggregated in the gateway Swagger UI
         - id: auth-docs
           uri: lb://auth-service
