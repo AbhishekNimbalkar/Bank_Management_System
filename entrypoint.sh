@@ -12,7 +12,7 @@ export JWT_JWK_SET_URI="${JWT_JWK_SET_URI:-http://localhost:8081/.well-known/jwk
 export GATEWAY_ONLY="${GATEWAY_ONLY:-false}"
 export JWT_ALLOW_EPHEMERAL_KEY="${JWT_ALLOW_EPHEMERAL_KEY:-true}"
 export SWAGGER_ENABLED="${SWAGGER_ENABLED:-true}"
-export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-*}"
+export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-http://localhost:5173,https://hrms.nexvitait.com,*}"
 
 # Highly optimized JVM flags for Render Free/Starter tier (512MB RAM total):
 # 1. -XX:TieredStopAtLevel=1 disables heavy C2 JIT compilation, reducing CPU & memory by >50% and speeding up boot
