@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-@FeignClient(name = "organization-service")
+@FeignClient(name = "organization-service", url = "${ORGANIZATION_SERVICE_URL:http://localhost:8082}")
 public interface OrganizationClient {
 
     @GetMapping("/api/v1/branches/{branchId}/geofence")

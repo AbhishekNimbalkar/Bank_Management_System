@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# Multi-service all-in-one container for Render deployment
+# Multi-service all-in-one lightweight container for Render deployment
 
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /workspace
@@ -16,8 +16,7 @@ RUN apk add --no-cache curl bash && \
 
 WORKDIR /app
 
-# Copy all built microservice jars from the build stage
-COPY --from=build --chown=app:app /workspace/discovery-server/target/discovery-server.jar /app/discovery-server.jar
+# Copy the 6 core microservice jars (discovery-server is eliminated to save ~110MB RAM)
 COPY --from=build --chown=app:app /workspace/auth-service/target/auth-service.jar /app/auth-service.jar
 COPY --from=build --chown=app:app /workspace/organization-service/target/organization-service.jar /app/organization-service.jar
 COPY --from=build --chown=app:app /workspace/attendance-service/target/attendance-service.jar /app/attendance-service.jar

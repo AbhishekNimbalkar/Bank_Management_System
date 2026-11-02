@@ -1,68 +1,81 @@
 #!/bin/sh
 set -e
 
-# Forward termination signals to all processes in this process group
+# Forward termination signals to all child processes
 trap "kill 0" EXIT TERM INT
 
 # Default environment variables
-export EUREKA_USERNAME="${EUREKA_USERNAME:-eureka}"
-export EUREKA_PASSWORD="${EUREKA_PASSWORD:-eureka}"
-export EUREKA_URL="http://${EUREKA_USERNAME}:${EUREKA_PASSWORD}@localhost:8761/eureka/"
+export EUREKA_CLIENT_ENABLED="false"
+export AUTH_SERVICE_URL="http://localhost:8081"
+export ORGANIZATION_SERVICE_URL="http://localhost:8082"
+export ATTENDANCE_SERVICE_URL="http://localhost:8083"
+export INCENTIVE_SERVICE_URL="http://localhost:8085"
+export AUDIT_SERVICE_URL="http://localhost:8084"
 export JWT_JWK_SET_URI="${JWT_JWK_SET_URI:-http://localhost:8081/.well-known/jwks.json}"
 export GATEWAY_ONLY="${GATEWAY_ONLY:-false}"
 export JWT_ALLOW_EPHEMERAL_KEY="${JWT_ALLOW_EPHEMERAL_KEY:-true}"
-export SWAGGER_ENABLED="${SWAGGER_ENABLED:-true}"
+export SWAGGER_ENABLED="${SWAGGER_ENABLED:-false}"
 export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-http://localhost:5173,https://hrms.nexvitait.com,*}"
+export DB_POOL_SIZE="${DB_POOL_SIZE:-3}"
 
-# Highly optimized JVM flags for Render Free/Starter tier (512MB RAM total):
-# 1. -XX:TieredStopAtLevel=1 disables heavy C2 JIT compilation, reducing CPU & memory by >50% and speeding up boot
-# 2. -XX:+UseSerialGC avoids native multithreaded GC buffer overhead
-# 3. -Xss256k reduces stack memory allocation per thread from 1MB down to 256KB
-# 4. -XX:ReservedCodeCacheSize & -XX:MaxMetaspaceSize cap native memory pools
-JVM_COMMON="-XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xss256k -XX:ReservedCodeCacheSize=24m -XX:MaxMetaspaceSize=60m -Djava.security.egd=file:/dev/urandom -Duser.timezone=UTC"
+# Highly optimized JVM flags for Render 512MB RAM limit:
+# 1. -XX:TieredStopAtLevel=1 disables heavy C2 JIT compilation (cuts memory & CPU by >50%)
+# 2. -XX:+UseSerialGC avoids multithreaded GC native buffer overhead
+# 3. -Xss256k reduces per-thread stack memory
+# 4. -XX:ReservedCodeCacheSize=12m caps JIT code cache
+# 5. -XX:MaxMetaspaceSize=40m caps metaspace per JVM
+JVM_COMMON="-XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xss256k -XX:ReservedCodeCacheSize=12m -XX:MaxMetaspaceSize=40m -Djava.security.egd=file:/dev/urandom -Duser.timezone=UTC"
 
 echo "=========================================================="
-echo " Starting Bank Management System (All-In-One Container) "
+echo " Starting Bank Management System (Lightweight Container) "
 echo "=========================================================="
 
-echo "-> [1/7] Starting Discovery Server (Eureka on port 8761)..."
-java $JVM_COMMON -Xms24m -Xmx40m -jar /app/discovery-server.jar --server.port=8761 &
+start_service() {
+  NAME=$1
+  PORT_NUM=$2
+  JAR=$3
+  XMS=$4
+  XMX=$5
 
-echo "Waiting for Eureka Server to respond on port 8761..."
+  echo "-> Starting $NAME on port $PORT_NUM (Heap: $XMX)..."
+  java $JVM_COMMON -Xms${XMS} -Xmx${XMX} -jar /app/${JAR} --server.port=${PORT_NUM} &
+
+  echo "   Waiting for $NAME to become ready on port $PORT_NUM..."
+  for i in $(seq 1 45); do
+    if curl -s -f http://127.0.0.1:${PORT_NUM}/actuator/health >/dev/null 2>&1 || curl -s http://127.0.0.1:${PORT_NUM} >/dev/null 2>&1; then
+      echo "   $NAME is ready!"
+      break
+    fi
+    sleep 1
+  done
+}
+
+# 1. Auth Service (8081) - must be up first for JWKS public keys
+start_service "auth-service" 8081 "auth-service.jar" "16m" "32m"
+
+# Verify JWKS endpoint
+echo "   Verifying JWKS endpoint at http://127.0.0.1:8081/.well-known/jwks.json..."
 for i in $(seq 1 30); do
-  if curl -s -f http://127.0.0.1:8761/actuator/health >/dev/null 2>&1 || curl -s http://127.0.0.1:8761 >/dev/null 2>&1; then
-    echo "Discovery Server is up and ready!"
-    break
-  fi
-  sleep 1
-done
-
-echo "-> [2/7] Starting Auth Service (port 8081)..."
-java $JVM_COMMON -Xms32m -Xmx64m -jar /app/auth-service.jar --server.port=8081 &
-
-echo "-> [3/7] Starting Organization Service (port 8082)..."
-java $JVM_COMMON -Xms32m -Xmx64m -jar /app/organization-service.jar --server.port=8082 &
-
-echo "-> [4/7] Starting Attendance Service (port 8083)..."
-java $JVM_COMMON -Xms32m -Xmx56m -jar /app/attendance-service.jar --server.port=8083 &
-
-echo "-> [5/7] Starting Incentive Service (port 8085)..."
-java $JVM_COMMON -Xms32m -Xmx56m -jar /app/incentive-service.jar --server.port=8085 &
-
-echo "-> [6/7] Starting Audit Service (port 8084)..."
-java $JVM_COMMON -Xms32m -Xmx56m -jar /app/audit-service.jar --server.port=8084 &
-
-# Ensure Auth Service JWKS public keys are exposed before API Gateway boots
-echo "Waiting for Auth Service JWKS endpoint (http://localhost:8081/.well-known/jwks.json)..."
-for i in $(seq 1 45); do
   if curl -s -f http://127.0.0.1:8081/.well-known/jwks.json >/dev/null 2>&1; then
-    echo "Auth Service JWKS keys are ready!"
+    echo "   JWKS keys are ready!"
     break
   fi
   sleep 1
 done
 
-# The Gateway binds to Render's dynamic external port (default 10000 or 8088)
+# 2. Organization Service (8082)
+start_service "organization-service" 8082 "organization-service.jar" "16m" "32m"
+
+# 3. Attendance Service (8083)
+start_service "attendance-service" 8083 "attendance-service.jar" "16m" "28m"
+
+# 4. Incentive Service (8085)
+start_service "incentive-service" 8085 "incentive-service.jar" "16m" "28m"
+
+# 5. Audit Service (8084)
+start_service "audit-service" 8084 "audit-service.jar" "16m" "24m"
+
+# 6. API Gateway on Render dynamic PORT (Foreground)
 GATEWAY_PORT="${PORT:-10000}"
-echo "-> [7/7] Starting API Gateway on port ${GATEWAY_PORT} (Foreground)..."
-java $JVM_COMMON -Xms32m -Xmx64m -jar /app/api-gateway.jar --server.port=${GATEWAY_PORT}
+echo "-> Starting api-gateway on port ${GATEWAY_PORT} (Foreground)..."
+java $JVM_COMMON -Xms16m -Xmx32m -jar /app/api-gateway.jar --server.port=${GATEWAY_PORT}
