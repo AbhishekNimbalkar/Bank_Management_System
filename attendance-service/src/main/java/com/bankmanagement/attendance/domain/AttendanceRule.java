@@ -32,5 +32,5 @@ public class AttendanceRule extends TenantScopedEntity {
 
     /** Reject GPS fixes less precise than this (meters), a basic guard against spoofed/poor locations. */
     @Column(name = "max_gps_accuracy_meters", nullable = false)
-    private int maxGpsAccuracyMeters = 100;
+    private int maxGpsAccuracyMeters = 250;
 }

@@ -72,6 +72,9 @@ springdoc:
     enabled: ${SWAGGER_ENABLED:false}
 
 management:
+  health:
+    rabbit:
+      enabled: false
   endpoints:
     web:
       exposure:

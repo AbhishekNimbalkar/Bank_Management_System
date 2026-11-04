@@ -108,7 +108,10 @@ public class BranchService {
         String tenant = SecurityUtils.currentTenant();
         Branch branch = find(tenant, id);
         if (branch.isHeadquarters() && branches.countByTenantCodeAndBankId(tenant, branch.getBankId()) > 1) {
-            throw BusinessException.rule("The headquarters branch cannot be deleted while its bank has other branches.");
+            branches.findByTenantCodeAndBankIdOrderByNameAsc(tenant, branch.getBankId()).stream()
+                    .filter(b -> !b.getId().equals(id))
+                    .findFirst()
+                    .ifPresent(nextHq -> nextHq.setHeadquarters(true));
         }
         long staff = employees.countByTenantCodeAndBranchId(tenant, id);
         if (staff > 0) {

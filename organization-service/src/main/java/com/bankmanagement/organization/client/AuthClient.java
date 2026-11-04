@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import java.util.UUID;
 
 /** Calls auth-service with the caller's own token (see FeignSupportConfig). */
-@FeignClient(name = "auth-service")
+@FeignClient(name = "auth-service", url = "${AUTH_SERVICE_URL:http://localhost:8081}")
 public interface AuthClient {
 
     @PostMapping("/api/v1/users")
